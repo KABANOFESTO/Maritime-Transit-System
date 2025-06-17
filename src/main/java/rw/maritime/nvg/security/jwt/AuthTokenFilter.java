@@ -6,25 +6,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import rw.maritime.nvg.security.User.MaritimeDetailService;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/**
- * AuthTokenFilter class to handle JWT token filtering for each request.
- * Removes roles functionality.
- *
- * @author Simpson Alfred
- */
 public class AuthTokenFilter extends OncePerRequestFilter {
 
     @Autowired
@@ -37,43 +31,68 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                     HttpServletResponse response,
-                                     FilterChain filterChain) throws ServletException, IOException {
+                                   HttpServletResponse response,
+                                   FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = parseJwt(request);
+            
+            if (jwt == null) {
+                logger.debug("No JWT token found in request");
+                filterChain.doFilter(request, response);
+                return;
+            }
 
-            if (jwt != null && jwtUtils.validateToken(jwt)) {
-                String email = jwtUtils.getUserNameFromToken(jwt);
+            logger.debug("Found JWT token in request");
 
-                // Load user details by email
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+            if (!jwtUtils.validateToken(jwt)) {
+                logger.warn("Invalid JWT token");
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
+                return;
+            }
 
-                // Create authentication token without roles (authorities)
-                var authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        null // Remove authorities to completely eliminate roles
+            String email = jwtUtils.getUserNameFromToken(jwt);
+            logger.debug("Extracted email from JWT: {}", email);
+
+            UserDetails userDetails;
+            try {
+                userDetails = userDetailsService.loadUserByUsername(email);
+                logger.debug("Successfully loaded user details for: {}", email);
+            } catch (UsernameNotFoundException e) {
+                logger.error("User not found with email: {}", email);
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "User not found");
+                return;
+            }
+
+            UsernamePasswordAuthenticationToken authentication = 
+                new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities()  // Include user authorities
                 );
 
-                // Set authentication details to the security context
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
+            authentication.setDetails(
+                new WebAuthenticationDetailsSource().buildDetails(request)
+            );
+            
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            logger.debug("Set authentication in security context for user: {}", email);
+
         } catch (Exception e) {
-            logger.error("Cannot set user authentication: {}", e.getMessage());
+            logger.error("Authentication error: {}", e.getMessage());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
+            return;
         }
 
-        // Continue the filter chain
         filterChain.doFilter(request, response);
     }
 
-    // Helper method to extract the JWT token from the Authorization header
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
 
         if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
-            return headerAuth.substring(7); // Extract the token part after "Bearer "
+            return headerAuth.substring(7);
         }
-        return null; // Return null if no valid JWT found
+        
+        return null;
     }
 }

@@ -66,23 +66,24 @@ public class WebSecurityConfig {
                         .requestMatchers(
                                 "/api/users/signup",
                                 "/api/users/login",
-                                "/api/users/all",
-                                "/api/users/verify-otp", // Add this line
+                                "/api/users/verify-otp",
                                 "/api/users/resend-otp",
-                                "/api/users/delete/**",
                                 "/auth/forgot-password",
                                 "/auth/reset-password",
-                                "/api/complaints",
-                                "/api/complaints/**",
-                                "/api/bins/**",
-                                "/api/waste-collections",
-                                "/api/waste-collections/**",
-                                "/api/bins",
-                                "/api/routes",
                                 "/auth/**",
                                 "/code**/",
-                                "/public/**")
+                                "/public/**",
+                                "/error")
                         .permitAll()
+                        
+                        .requestMatchers("/api/users/all").authenticated()
+                        .requestMatchers("/api/users/delete/**").authenticated()
+                        .requestMatchers("/api/complaints/**").authenticated()
+                        .requestMatchers("/api/schedules/**").authenticated()
+                        .requestMatchers("/api/vessels/**").authenticated()
+                        .requestMatchers("/api/bins/**").authenticated()
+                        .requestMatchers("/api/routes/**").authenticated()
+                        
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(authenticationTokenFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -96,7 +97,7 @@ public class WebSecurityConfig {
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:5173",
                 "http://127.0.0.1:5501",
-                "http://localhost:8080",
+                "http://localhost:3000",
                 "http://127.0.0.1:5500"));
         configuration.setAllowCredentials(true);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -106,7 +107,7 @@ public class WebSecurityConfig {
                 "X-Requested-With",
                 "Accept"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
-        configuration.setMaxAge(3600L); // 1 hour, as in WebConfig
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

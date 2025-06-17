@@ -23,4 +23,6 @@ public class Route {
     private String destinationPort;
 
     private double distance;
+
+    
 }
