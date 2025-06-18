@@ -3,6 +3,10 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { signIn, signOut, getSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { Shield, Package, User, Home } from 'lucide-react';
 
 interface FormData {
   email: string;
@@ -16,6 +20,8 @@ export default function SignIn() {
     password: '',
     rememberMe: false
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value, type, checked } = e.target;
@@ -25,16 +31,230 @@ export default function SignIn() {
     }));
   };
 
-  const handleSignIn = (e: React.MouseEvent<HTMLButtonElement>): void => {
+  const handleSignIn = async (e: React.MouseEvent<HTMLButtonElement>): Promise<void> => {
     e.preventDefault();
-    console.log('Sign in:', formData);
-    // Handle sign in logic here
+    setIsLoading(true);
+
+    // Basic validation
+    if (!formData.email || !formData.password) {
+      toast.error('Please fill in all fields', {
+        style: {
+          background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+          color: 'white',
+          border: '1px solid #fca5a5',
+        },
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Please enter a valid email address', {
+        style: {
+          background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+          color: 'white',
+          border: '1px solid #fca5a5',
+        },
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log('Attempting sign-in with:', { 
+        email: formData.email,
+        passwordLength: formData.password.length 
+      });
+
+      // First, check if there's an existing session
+      const existingSession = await getSession();
+      if (existingSession) {
+        console.log('Found existing session, signing out first...');
+        await signOut({ redirect: false });
+        // Wait a moment for the session to clear
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      console.log('Attempting fresh sign-in...');
+      const result = await signIn('credentials', {
+        redirect: false,
+        email: formData.email.trim().toLowerCase(), // Normalize email
+        password: formData.password,
+      });
+
+      console.log('SignIn result:', result);
+
+      if (result?.error) {
+        console.error('SignIn error:', result.error);
+        
+        // Handle different error types
+        let errorMessage = 'Login failed. Please try again.';
+        
+        switch (result.error) {
+          case 'CredentialsSignin':
+            errorMessage = 'Invalid email or password. Please check your credentials.';
+            break;
+          case 'CallbackRouteError':
+            errorMessage = 'Authentication service error. Please try again.';
+            break;
+          case 'Configuration':
+            errorMessage = 'Authentication configuration error. Please contact support.';
+            break;
+          case 'Authentication server error':
+            errorMessage = 'Server authentication error. Please try again.';
+            break;
+          default:
+            errorMessage = result.error;
+        }
+
+        toast.error(errorMessage, {
+          style: {
+            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+            color: 'white',
+            border: '1px solid #fca5a5',
+          },
+        });
+      } else if (result?.ok) {
+        console.log('SignIn successful, fetching session...');
+        
+        // Wait a moment for the session to be created
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Get session to check user role
+        const session = await getSession();
+        console.log('Current session:', session);
+        
+        if (!session?.user) {
+          toast.error('Session creation failed. Please try again.', {
+            style: {
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              color: 'white',
+              border: '1px solid #fca5a5',
+            },
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        const userRole = session.user.role || 'User';
+        console.log('User role:', userRole);
+
+        // Show success message
+        toast.success('Welcome back! Redirecting...', {
+          style: {
+            background: 'linear-gradient(135deg, #10b981, #059669)',
+            color: 'white',
+            border: '1px solid #6ee7b7',
+            fontWeight: '600',
+          },
+        });
+
+        // Redirect based on role
+        const redirectPath = getRedirectPath(userRole);
+        console.log('Redirecting to:', redirectPath);
+        
+        // Clear form
+        setFormData({
+          email: '',
+          password: '',
+          rememberMe: false
+        });
+        
+        setTimeout(() => {
+          router.push(redirectPath);
+        }, 1500);
+      } else {
+        // This shouldn't happen, but handle just in case
+        toast.error('Unexpected error occurred. Please try again.', {
+          style: {
+            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+            color: 'white',
+            border: '1px solid #fca5a5',
+          },
+        });
+      }
+    } catch (error) {
+      console.error('SignIn catch error:', error);
+      toast.error('Network error. Please check your connection and try again.', {
+        style: {
+          background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+          color: 'white',
+          border: '1px solid #fca5a5',
+        },
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleSignIn = (e: React.MouseEvent<HTMLButtonElement>): void => {
+  const handleGoogleSignIn = async (e: React.MouseEvent<HTMLButtonElement>): Promise<void> => {
     e.preventDefault();
-    console.log('Google sign in');
-    // Handle Google sign in logic here
+    setIsLoading(true);
+
+    try {
+      // Check for existing session and sign out if needed
+      const existingSession = await getSession();
+      if (existingSession) {
+        console.log('Found existing session, signing out first...');
+        await signOut({ redirect: false });
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      const result = await signIn('google', {
+        redirect: false,
+        callbackUrl: '/'
+      });
+
+      if (result?.error) {
+        toast.error('Google sign in failed', {
+          style: {
+            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+            color: 'white',
+            border: '1px solid #fca5a5',
+          },
+        });
+      } else if (result?.ok) {
+        toast.success('Google sign in successful!', {
+          style: {
+            background: 'linear-gradient(135deg, #10b981, #059669)',
+            color: 'white',
+            border: '1px solid #6ee7b7',
+            fontWeight: '600',
+          },
+        });
+        
+        // Redirect after successful Google sign in
+        setTimeout(() => {
+          router.push('/d');
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      toast.error('Google sign in failed. Please try again.', {
+        style: {
+          background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+          color: 'white',
+          border: '1px solid #fca5a5',
+        },
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getRedirectPath = (role: string): string => {
+    switch (role) {
+      case 'ADMIN':
+        return '/Admin';
+      case 'STAFF':
+        return '/staff';
+      case 'USER':
+        return '/client';
+      default:
+        return '/dashboard';
+    }
   };
 
   return (
@@ -63,6 +283,8 @@ export default function SignIn() {
                   onChange={handleInputChange}
                   placeholder="Enter your email"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={isLoading}
+                  required
                 />
               </div>
 
@@ -78,6 +300,8 @@ export default function SignIn() {
                   onChange={handleInputChange}
                   placeholder="••••••••••"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={isLoading}
+                  required
                 />
               </div>
 
@@ -90,6 +314,7 @@ export default function SignIn() {
                     checked={formData.rememberMe}
                     onChange={handleInputChange}
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    disabled={isLoading}
                   />
                   <span className="text-sm text-gray-700">Remember me</span>
                 </label>
@@ -101,15 +326,27 @@ export default function SignIn() {
               {/* Sign In Button */}
               <button
                 onClick={handleSignIn}
-                className="w-full bg-sky-400 hover:bg-sky-500 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200"
+                disabled={isLoading || !formData.email || !formData.password}
+                className="w-full bg-sky-400 hover:bg-sky-500 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Sign in
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign in'
+                )}
               </button>
 
               {/* Google Sign In Button */}
               <button
                 onClick={handleGoogleSignIn}
-                className="w-full bg-white hover:bg-gray-50 text-gray-700 font-medium py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center space-x-3"
+                disabled={isLoading}
+                className="w-full bg-white hover:bg-gray-50 text-gray-700 font-medium py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center space-x-3 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#EA4335" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -124,7 +361,7 @@ export default function SignIn() {
               <p className="text-center text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link href="/auth/signup" className="text-red-500 hover:text-red-600 font-medium">
-                  Sign up fo free!
+                  Sign up for free!
                 </Link>
               </p>
             </div>

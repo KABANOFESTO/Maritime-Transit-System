@@ -1,16 +1,37 @@
 "use client"
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import Image from 'next/image'
 import React, { useState, useEffect } from 'react'
+import { useGetUserByEmailQuery } from "../../lib/redux/slices/AuthSlice";
 
 interface NavbarProps {
     onSearch: (query: string) => void;
 }
 
+interface UserDetails {
+    id: number;
+    email: string;
+    username: string;
+    role: string;
+}
+
 const Navbar = ({ onSearch }: NavbarProps) => {
-    const { data: sessionData } = useSession()
+    const { data: session, status } = useSession()
     const [showUserDropdown, setShowUserDropdown] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Get user email from session
+    const userEmail = session?.user?.email;
+
+    // Fetch user details only if we have session and email
+    const { 
+        data: userDetails, 
+        isLoading, 
+        isError, 
+        error 
+    } = useGetUserByEmailQuery(userEmail!, {
+        skip: !session || !userEmail, // Skip if no session or email
+    });
 
     // Debounce search input
     useEffect(() => {
@@ -29,6 +50,11 @@ const Navbar = ({ onSearch }: NavbarProps) => {
         setShowUserDropdown(!showUserDropdown);
     };
 
+    const handleSignOut = async () => {
+        await signOut({ callbackUrl: '/login' });
+    };
+
+    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as HTMLElement;
@@ -45,6 +71,36 @@ const Navbar = ({ onSearch }: NavbarProps) => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [showUserDropdown]);
+
+    // Format role for display
+    const formatRole = (role: string) => {
+        return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+    };
+
+    // Get user initials from username
+    const getUserInitials = (username: string) => {
+        if (!username) return 'U';
+        return username.split(' ').map(name => name.charAt(0).toUpperCase()).join('').slice(0, 2);
+    };
+
+    // Display values - prioritize backend data, fallback to session
+    const displayName = userDetails?.username || session?.user?.name || 'User';
+    const displayEmail = userDetails?.email || session?.user?.email || '';
+    const displayRole = userDetails?.role ? formatRole(userDetails.role) : 'User';
+    const userInitials = getUserInitials(displayName);
+
+    // Don't render if not authenticated
+    if (status === 'loading') {
+        return (
+            <div className='w-full flex flex-row items-center bg-white px-6 py-4 justify-center border-b border-gray-100'>
+                <div className="animate-pulse">Loading...</div>
+            </div>
+        );
+    }
+
+    if (!session) {
+        return null; // Or redirect to login
+    }
 
     return (
         <div className='w-full flex flex-row items-center bg-white px-6 py-4 justify-center border-b border-gray-100'>
@@ -80,73 +136,153 @@ const Navbar = ({ onSearch }: NavbarProps) => {
 
                 {/* User Profile */}
                 <div className='relative user-dropdown-container'>
-                    <div className='flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded-full p-1 pr-3'>
-                        <div className='flex items-center justify-center overflow-hidden rounded-full bg-gray-200 w-8 h-8'>
-                            {sessionData?.user?.image ? (
+                    <div
+                        className='flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded-full p-1 pr-3'
+                        onClick={handleProfileClick}
+                    >
+                        <div className='flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-r from-blue-500 to-purple-600 w-8 h-8'>
+                            {session?.user?.image ? (
                                 <Image
-                                    src={sessionData.user.image}
+                                    src={session.user.image}
                                     alt='profile'
                                     width={32}
                                     height={32}
                                     className='object-cover rounded-full'
                                 />
                             ) : (
-                                <div className="flex items-center justify-center h-full w-full text-gray-600 font-medium text-sm">
-                                    BG
+                                <div className="flex items-center justify-center h-full w-full text-white font-semibold text-sm">
+                                    {userInitials}
                                 </div>
                             )}
                         </div>
-                        <span className="text-sm font-medium text-gray-700">B.Ghislaine</span>
+                        <span className="text-sm font-medium text-gray-700">
+                            {isLoading ? 'Loading...' : displayName}
+                        </span>
+                        <svg
+                            className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showUserDropdown ? 'rotate-180' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
                     </div>
 
                     {showUserDropdown && (
-                        <div className="absolute right-0 top-12 bg-white rounded-lg shadow-lg border border-gray-200 p-4 min-w-[250px] z-50">
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
-                                    <div className="flex items-center justify-center overflow-hidden rounded-full bg-gray-200 w-10 h-10">
-                                        {sessionData?.user?.image ? (
-                                            <Image
-                                                src={sessionData.user.image}
-                                                alt='profile'
-                                                width={40}
-                                                height={40}
-                                                className='object-cover rounded-full'
-                                            />
-                                        ) : (
-                                            <span className="font-medium text-gray-600">
-                                                BG
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold text-gray-900">B.Ghislaine</h3>
-                                        <p className="text-sm text-gray-500">Operation Staff</p>
-                                    </div>
+                        <div className="absolute right-0 top-12 bg-white rounded-xl shadow-lg border border-gray-200 p-6 min-w-[320px] z-50">
+                            {isLoading ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                                 </div>
+                            ) : isError ? (
+                                <div className="text-center py-6">
+                                    <div className="text-red-500 text-sm mb-3">Failed to load profile</div>
+                                    <p className="text-gray-600 text-xs">{error?.toString()}</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {/* User Profile Header */}
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-r from-blue-500 to-purple-600 w-16 h-16">
+                                            {session?.user?.image ? (
+                                                <Image
+                                                    src={session.user.image}
+                                                    alt='profile'
+                                                    width={64}
+                                                    height={64}
+                                                    className='object-cover rounded-full'
+                                                />
+                                            ) : (
+                                                <span className="font-bold text-white text-2xl">
+                                                    {userInitials}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="font-bold text-gray-900 text-xl">{displayName}</h3>
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                                    {displayRole}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                <div className="space-y-2">
-                                    <div>
-                                        <label className="text-xs text-gray-500 uppercase tracking-wide">Email</label>
-                                        <p className="text-sm text-gray-900">b.ghislaine@company.com</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs text-gray-500 uppercase tracking-wide">Department</label>
-                                        <p className="text-sm text-gray-900">Operations</p>
-                                    </div>
-                                </div>
+                                    {/* User Information Cards */}
+                                    <div className="space-y-4">
+                                        {/* Username */}
+                                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Username</label>
+                                                    <p className="text-sm text-gray-900 font-semibold">{displayName}</p>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                <div className="pt-3 border-t border-gray-100 space-y-2">
-                                    <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
-                                        View Profile
-                                    </button>
-                                    <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
-                                        Settings
-                                    </button>
-                                    <button className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md">
-                                        Sign Out
-                                    </button>
+                                        {/* Email */}
+                                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Email Address</label>
+                                                    <p className="text-sm text-gray-900 font-semibold">{displayEmail}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Role */}
+                                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-semibold text-green-600 uppercase tracking-wide">Role</label>
+                                                    <p className="text-sm text-gray-900 font-semibold">{displayRole}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="pt-4 border-t border-gray-200 space-y-2">
+                                        <button className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all duration-200 flex items-center gap-3 font-medium">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                            View Profile
+                                        </button>
+                                        <button className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all duration-200 flex items-center gap-3 font-medium">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                            Settings
+                                        </button>
+                                        <button 
+                                            onClick={handleSignOut}
+                                            className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 flex items-center gap-3 font-medium"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                            </svg>
+                                            Sign Out
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -155,4 +291,4 @@ const Navbar = ({ onSearch }: NavbarProps) => {
     )
 }
 
-export default Navbar
+export default Navbar;
