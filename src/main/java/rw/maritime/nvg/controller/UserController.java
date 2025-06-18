@@ -1,12 +1,11 @@
 package rw.maritime.nvg.controller;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import rw.maritime.nvg.model.Role;
 import rw.maritime.nvg.model.User;
 import rw.maritime.nvg.security.jwt.JwtUtil;
@@ -21,21 +20,21 @@ import java.util.Map;
 public class UserController {
 
     private final IUserService userService;
-    private final JwtUtil jwtUtil; 
+    private final JwtUtil jwtUtil;
 
     public UserController(IUserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
-        this.jwtUtil = jwtUtil; // Constructor injection for jwtUtil
+        this.jwtUtil = jwtUtil;
     }
 
-    // Endpoint for user registration
+    /** Register a user. Default role = USER if not set */
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@RequestBody User user) {
         try {
-            // Set default role if not provided
             if (user.getRole() == null) {
-                user.setRole(Role.USER); // default to USER role
+                user.setRole(Role.USER);
             }
+
             userService.createUser(user);
             return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
         } catch (Exception e) {
@@ -44,123 +43,123 @@ public class UserController {
         }
     }
 
-    // Endpoint for user login
+    /** User login and JWT token generation */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User user) {
         try {
-            System.out.println("Attempting to log in user with email: " + user.getEmail());
-
             boolean isAuthenticated = userService.authenticateUser(user.getEmail(), user.getPassword());
-
-            // Log whether the authentication was successful
-            System.out.println("Authentication successful: " + isAuthenticated);
 
             if (isAuthenticated) {
                 User authenticatedUser = userService.getUser(user.getEmail());
-
-                // Log the user's details
-                System.out.println("Authenticated user: " + authenticatedUser);
-
                 String token = jwtUtil.generateToken(authenticatedUser);
 
-                // Specify the type parameters for HashMap<String, String>
-                Map<String, String> response = new HashMap<String, String>();
+                Map<String, String> response = new HashMap<>();
                 response.put("message", "Login successful!");
                 response.put("token", token);
 
-                return ResponseEntity.ok(response); // Return response with message and token
+                return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
             }
+
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found: " + e.getMessage());
         } catch (Exception e) {
-            System.out.println("Error during login: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error during login: " + e.getMessage());
         }
     }
 
-    // Endpoint to fetch all users
+    /** Only ADMIN can view all users */
     @GetMapping("/all")
-    public ResponseEntity<?> getAllUsers(@RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<?> getAllUsers(@RequestHeader("Authorization") String authHeader) {
         try {
-            // Remove "Bearer " from the token
-            String jwtToken = authorizationHeader.substring(7);
-            Claims claims = jwtUtil.extractClaims(jwtToken);
-
-            // Extract the user's role from the token
-            String userRole = claims.get("role", String.class);
-
-            // Check if the user has ADMIN privileges
-            if (!Role.ADMIN.name().equals(userRole)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Insufficient privileges");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token required");
             }
 
-            // Fetch the list of users
+            String token = authHeader.substring(7);
+            Claims claims = jwtUtil.extractClaims(token);
+            String role = claims.get("role", String.class);
+
+            if (!Role.ADMIN.name().equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Admins only");
+            }
+
             List<User> users = userService.getUsers();
             return ResponseEntity.ok(users);
 
         } catch (JwtException e) {
-            // Handle JWT-specific exceptions
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token");
         } catch (Exception e) {
-            // Catch all other exceptions
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred while fetching the users");
+                    .body("Error fetching users: " + e.getMessage());
         }
     }
 
-    // Endpoint to fetch user by email
+    /** Accessible by any authenticated user to view their own data */
     @GetMapping("/{email}")
-    public ResponseEntity<?> getUserByEmail(@PathVariable("email") String email) {
+    public ResponseEntity<?> getUserByEmail(
+            @PathVariable("email") String email,
+            @RequestHeader("Authorization") String authHeader) {
         try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token required");
+            }
+
+            String token = authHeader.substring(7);
+            Claims claims = jwtUtil.extractClaims(token);
+            String requesterEmail = claims.getSubject();
+            String role = claims.get("role", String.class);
+
+            // Only ADMIN or owner of the account can view
+            if (!email.equals(requesterEmail) && !Role.ADMIN.name().equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+            }
+
             User theUser = userService.getUser(email);
             return ResponseEntity.ok(theUser);
+
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found: " + e.getMessage());
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching user");
         }
     }
 
-    // Endpoint to delete a user by email
+    /** Only ADMIN can delete any user, except their own account */
     @DeleteMapping("/delete/{email}")
     public ResponseEntity<String> deleteUser(
-            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestHeader("Authorization") String authHeader,
             @PathVariable("email") String email) {
         try {
-            // Extract and validate JWT token
-            if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authorization token is required");
             }
 
-            // Remove "Bearer " from the token
-            String jwtToken = authorizationHeader.substring(7);
-            Claims claims = jwtUtil.extractClaims(jwtToken);
+            String token = authHeader.substring(7);
+            Claims claims = jwtUtil.extractClaims(token);
 
-            // Extract the user's role from the token
-            String userRole = claims.get("role", String.class);
-            String tokenUserEmail = claims.getSubject(); // Get email from token
+            String requesterEmail = claims.getSubject();
+            String role = claims.get("role", String.class);
 
-            // Check if the user has ADMIN privileges
-            if (!Role.ADMIN.name().equals(userRole)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Only administrators can delete users");
+            if (!Role.ADMIN.name().equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only administrators can delete users");
             }
 
-            // Prevent admin from deleting their own account
-            if (email.equals(tokenUserEmail)) {
+            if (email.equals(requesterEmail)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Cannot delete your own admin account");
             }
 
-            // Proceed with deletion
             userService.deleteUser(email);
             return ResponseEntity.ok("User deleted successfully");
 
-        } catch (JwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token");
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found: " + e.getMessage());
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error deleting user: " + e.getMessage());

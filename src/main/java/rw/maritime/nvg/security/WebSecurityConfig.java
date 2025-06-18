@@ -68,9 +68,9 @@ public class WebSecurityConfig {
                                 "/api/users/login",
                                 "/api/users/verify-otp",
                                 "/api/users/resend-otp",
-                                "/auth/forgot-password",
-                                "/auth/reset-password",
-                                "/auth/**",
+                                "/users/forgot-password",
+                                "/users/reset-password",
+                                "/users/**",
                                 "/code**/",
                                 "/public/**",
                                 "/error")
