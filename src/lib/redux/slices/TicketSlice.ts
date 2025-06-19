@@ -3,10 +3,20 @@ import { apiSlice } from "./ApiSlice";
 const ticketApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
         getTickets: builder.query({
-            query: () => "/tickets",
+            query: () => ({
+                url: "/tickets",
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            }),
         }),
         getTicketById: builder.query({
-            query: (id) => `/tickets/${id}`,
+            query: (id) => ({
+                url: `/tickets/${id}`,
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            }),
         }),
         createTicket: builder.mutation({
             query: (newTicket) => ({

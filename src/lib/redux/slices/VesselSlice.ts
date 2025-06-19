@@ -1,9 +1,14 @@
-import {apiSlice} from './ApiSlice';
+import { apiSlice } from './ApiSlice';
 
 const vesselApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getVessels: builder.query({
-      query: () => '/vessels',
+      query: () => ({
+        url: '/vessels',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      }),
     }),
     getVesselById: builder.query({
       query: (id) => `/vessels/${id}`,
@@ -46,4 +51,4 @@ export const {
   useUpdateVesselMutation,
   useDeleteVesselMutation,
 } = vesselApi;
-export {vesselApi};
+export { vesselApi };

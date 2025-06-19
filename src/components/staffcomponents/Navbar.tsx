@@ -51,7 +51,8 @@ const Navbar = ({ onSearch }: NavbarProps) => {
     };
 
     const handleSignOut = async () => {
-        await signOut({ callbackUrl: '/login' });
+        localStorage.clear();
+        await signOut({ callbackUrl: '/auth' });
     };
 
     // Close dropdown when clicking outside

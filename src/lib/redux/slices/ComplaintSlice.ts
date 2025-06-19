@@ -3,10 +3,20 @@ import { apiSlice } from "./ApiSlice";
 const complaintApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
         getComplaints: builder.query({
-            query: () => "/complaints",
+            query: () => ({
+                url: "/complaints",
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            }),
         }),
         getComplaintById: builder.query({
-            query: (id) => `/complaints/${id}`,
+            query: (id) => ({
+                url: `/complaints/${id}`,
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            }),
         }),
         createComplaint: builder.mutation({
             query: (newComplaint) => ({
@@ -34,6 +44,9 @@ const complaintApi = apiSlice.injectEndpoints({
             query: (id) => ({
                 url: `/complaints/${id}`,
                 method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
             }),
         }),
     }),

@@ -3,10 +3,20 @@ import { apiSlice } from "./ApiSlice";
 const analyticApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
         getAnalytics: builder.query({
-            query: () => "/analytics",
+            query: () => ({
+                url: "/analytics",
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`
+                }
+            }),
         }),
         getAnalyticsById: builder.query({
-            query: (id) => `/analytics/${id}`,
+            query: (id) => ({
+                url: `/analytics/${id}`,
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`
+                }
+            }),
         }),
         createAnalytics: builder.mutation({
             query: (newAnalytics) => ({
@@ -15,7 +25,7 @@ const analyticApi = apiSlice.injectEndpoints({
                 body: newAnalytics,
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`
                 },
             }),
         }),
@@ -26,7 +36,7 @@ const analyticApi = apiSlice.injectEndpoints({
                 body: updatedAnalytics,
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`
                 },
             }),
         }),
@@ -34,6 +44,9 @@ const analyticApi = apiSlice.injectEndpoints({
             query: (id) => ({
                 url: `/analytics/${id}`,
                 method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`
+                }
             }),
         }),
     }),

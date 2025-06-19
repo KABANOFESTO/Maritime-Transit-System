@@ -1,50 +1,63 @@
 import { apiSlice } from "./ApiSlice";
 
-const routeApi = apiSlice.injectEndpoints({
+const scheduleApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
-        getRoutes: builder.query({
-            query: () => '/routes',
-        }),
-        getRouteById: builder.query({
-            query: (id) => `/routes/${id}`,
-        }),
-        createRoute: builder.mutation({
-            query: (newRoute) => ({
-                url: '/routes',
-                method: 'POST',
-                body: newRoute,
+        getSchedules: builder.query({
+            query: () => ({
+                url: "/schedules",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
                 },
             }),
         }),
-        updateRoute: builder.mutation({
-            query: (updatedRoute) => ({
-                url: `/routes/${updatedRoute.id}`,
-                method: 'PUT',
-                body: updatedRoute,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                },
-            }),
-        }),
-        deleteRoute: builder.mutation({
+        getScheduleById: builder.query({
             query: (id) => ({
-                url: `/routes/${id}`,
-                method: 'DELETE',
+                url: `/schedules/${id}`,
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            }),
+        }),
+        createSchedule: builder.mutation({
+            query: (newSchedule) => ({
+                url: "/schedules",
+                method: "POST",
+                body: newSchedule,
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            }),
+        }),
+        updateSchedule: builder.mutation({
+            query: (updatedSchedule) => ({
+                url: `/schedules/${updatedSchedule.id}`,
+                method: "PUT",
+                body: updatedSchedule,
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            }),
+        }),
+        deleteSchedule: builder.mutation({
+            query: (id) => ({
+                url: `/schedules/${id}`,
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
                 },
             }),
         }),
     }),
 });
+
 export const {
-    useGetRoutesQuery,
-    useGetRouteByIdQuery,
-    useCreateRouteMutation,
-    useUpdateRouteMutation,
-    useDeleteRouteMutation,
-} = routeApi;
+    useGetSchedulesQuery,
+    useGetScheduleByIdQuery,
+    useCreateScheduleMutation,
+    useUpdateScheduleMutation,
+    useDeleteScheduleMutation,
+} = scheduleApi;
+
+export { scheduleApi };

@@ -19,7 +19,6 @@ export default function RootLayout({
         role: "admin"
     });
 
-    // Render Admin Panel
     return (
         <div className="flex flex-row w-full min-h-screen lg:w-[90%] bg-none">
             <StaffSideBar />

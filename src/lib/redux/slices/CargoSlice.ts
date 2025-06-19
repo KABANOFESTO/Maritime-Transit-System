@@ -3,14 +3,24 @@ import { apiSlice } from "./ApiSlice";
 const cargoApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
         getCargoes: builder.query({
-            query: () => "/cargoes",
+            query: () => ({
+                url: "/cargo",
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            }),
         }),
         getCargoById: builder.query({
-            query: (id) => `/cargoes/${id}`,
+            query: (id) => ({
+                url: `/cargo/${id}`,
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            }),
         }),
         createCargo: builder.mutation({
             query: (newCargo) => ({
-                url: "/cargoes",
+                url: "/cargo",
                 method: "POST",
                 body: newCargo,
                 headers: {
@@ -21,7 +31,7 @@ const cargoApi = apiSlice.injectEndpoints({
         }),
         updateCargo: builder.mutation({
             query: (updatedCargo) => ({
-                url: `/cargoes/${updatedCargo.id}`,
+                url: `/cargo/${updatedCargo.id}`,
                 method: "PUT",
                 body: updatedCargo,
                 headers: {
@@ -32,7 +42,7 @@ const cargoApi = apiSlice.injectEndpoints({
         }),
         deleteCargo: builder.mutation({
             query: (id) => ({
-                url: `/cargoes/${id}`,
+                url: `/cargo/${id}`,
                 method: "DELETE",
             }),
         }),

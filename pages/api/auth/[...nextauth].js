@@ -11,19 +11,14 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        console.log("🔄 AUTHORIZE FUNCTION CALLED");
-        console.log("📧 Email:", credentials?.email);
-        console.log("🔒 Password length:", credentials?.password?.length);
-        console.log("🌍 API URL:", process.env.NEXT_PUBLIC_API_URL);
         
         if (!credentials?.email || !credentials?.password) {
-          console.log("❌ Missing credentials");
+      
           throw new Error("Missing email or password");
         }
 
         try {
           const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/login`;
-          console.log("📡 Making request to:", apiUrl);
           
           const requestData = {
             email: credentials.email,
@@ -38,44 +33,36 @@ export const authOptions = {
             }
           });
 
-          console.log("✅ API Response status:", response.status);
-          console.log("📄 API Response data:", JSON.stringify(response.data, null, 2));
-
-          // Check if response has the expected structure
           if (!response.data) {
             console.log("❌ No response data");
             throw new Error("No response data from API");
           }
 
-          // Handle different response structures
+       
           let user, token, refresh;
           
           if (response.data.access && response.data.user) {
-            // Structure: { access, refresh, user }
             user = response.data.user;
             token = response.data.access;
             refresh = response.data.refresh;
-            console.log("✅ Using structure: { access, refresh, user }");
+
           } else if (response.data.token && response.data.user) {
-            // Structure: { token, user }
             user = response.data.user;
             token = response.data.token;
             refresh = response.data.refreshToken || null;
             console.log("✅ Using structure: { token, user }");
           } else if (response.data.message && response.data.token) {
-            // Structure: { message, token } - YOUR API STRUCTURE
-            // Since there's no user object, we'll extract user info from the JWT token
+          
             console.log("✅ Using structure: { message, token }");
             token = response.data.token;
             refresh = null;
             
-            // Extract user info from JWT token payload
             try {
               const tokenPayload = JSON.parse(atob(token.split('.')[1]));
               console.log("🔍 JWT Payload:", tokenPayload);
               
               user = {
-                id: tokenPayload.sub || credentials.email, // Use email as fallback ID
+                id: tokenPayload.sub || credentials.email, 
                 email: tokenPayload.sub || credentials.email,
                 role: tokenPayload.role || 'USER',
                 username: tokenPayload.username || credentials.email.split('@')[0]
@@ -97,12 +84,10 @@ export const authOptions = {
             refresh = response.data.refreshToken || null;
             console.log("✅ Using direct user object structure");
           } else {
-            console.log("❌ Unknown response structure:", Object.keys(response.data));
             throw new Error("Invalid response structure from API");
           }
 
           if (!user) {
-            console.log("❌ No user data found in response");
             throw new Error("No user data in API response");
           }
 
@@ -119,20 +104,10 @@ export const authOptions = {
           return userObject;
 
         } catch (error) {
-          console.error("❌ Authorization error:", error);
           
           if (axios.isAxiosError(error)) {
-            console.error("🔍 Axios error details:");
-            console.error("  - Status:", error.response?.status);
-            console.error("  - Status Text:", error.response?.statusText);
-            console.error("  - Response Data:", error.response?.data);
-            console.error("  - Request URL:", error.config?.url);
-            console.error("  - Request Method:", error.config?.method);
-            console.error("  - Request Headers:", error.config?.headers);
-            console.error("  - Request Data:", error.config?.data);
             
             if (error.code === 'ECONNREFUSED') {
-              console.error("🔌 Connection refused - Is your backend server running?");
               throw new Error("Cannot connect to authentication server");
             }
             
