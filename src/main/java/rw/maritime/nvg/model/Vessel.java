@@ -24,4 +24,14 @@ public class Vessel {
     private int capacity;
 
     private double fuelLevel;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Status status;
+
+    public enum Status {
+        ACTIVE,
+        MAINTENANCE,
+        STANDBY
+    }
 }

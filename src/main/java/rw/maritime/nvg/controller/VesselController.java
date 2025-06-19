@@ -50,6 +50,11 @@ public class VesselController {
         return ResponseEntity.ok(vesselService.getVesselsWithLowFuel(fuelThreshold));
     }
 
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<Vessel>> getVesselsByStatus(@PathVariable Vessel.Status status) {
+        return ResponseEntity.ok(vesselService.getVesselsByStatus(status));
+    }
+
     @PostMapping
     public ResponseEntity<Vessel> createVessel(@RequestBody Vessel vessel) {
         if (vesselService.existsByName(vessel.getName())) {
@@ -63,9 +68,30 @@ public class VesselController {
         return ResponseEntity.ok(vesselService.updateVessel(id, vessel));
     }
 
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Vessel> updateVesselStatus(
+            @PathVariable Long id,
+            @RequestBody StatusUpdateRequest request) {
+        return vesselService.updateVesselStatus(id, request.getStatus())
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteVessel(@PathVariable Long id) {
         vesselService.deleteVessel(id);
         return ResponseEntity.noContent().build();
+    }
+
+    public static class StatusUpdateRequest {
+        private Vessel.Status status;
+
+        public Vessel.Status getStatus() {
+            return status;
+        }
+
+        public void setStatus(Vessel.Status status) {
+            this.status = status;
+        }
     }
 }

@@ -39,7 +39,16 @@ public class VesselService {
         return vesselRepository.findByFuelLevelLessThan(fuelThreshold);
     }
 
+    // Add this new method to get vessels by status
+    public List<Vessel> getVesselsByStatus(Vessel.Status status) {
+        return vesselRepository.findByStatus(status);
+    }
+
     public Vessel createVessel(Vessel vessel) {
+        // Set default status if not provided
+        if (vessel.getStatus() == null) {
+            vessel.setStatus(Vessel.Status.ACTIVE);
+        }
         return vesselRepository.save(vessel);
     }
 
@@ -50,10 +59,18 @@ public class VesselService {
                     vessel.setType(updatedVessel.getType());
                     vessel.setCapacity(updatedVessel.getCapacity());
                     vessel.setFuelLevel(updatedVessel.getFuelLevel());
+                    // Update status if provided
+                    if (updatedVessel.getStatus() != null) {
+                        vessel.setStatus(updatedVessel.getStatus());
+                    }
                     return vesselRepository.save(vessel);
                 })
                 .orElseGet(() -> {
                     updatedVessel.setId(id);
+                    // Set default status if not provided
+                    if (updatedVessel.getStatus() == null) {
+                        updatedVessel.setStatus(Vessel.Status.ACTIVE);
+                    }
                     return vesselRepository.save(updatedVessel);
                 });
     }
@@ -64,5 +81,14 @@ public class VesselService {
 
     public boolean existsByName(String name) {
         return vesselRepository.findByName(name).isPresent();
+    }
+
+    // Additional method to update vessel status
+    public Optional<Vessel> updateVesselStatus(Long id, Vessel.Status newStatus) {
+        return vesselRepository.findById(id)
+                .map(vessel -> {
+                    vessel.setStatus(newStatus);
+                    return vesselRepository.save(vessel);
+                });
     }
 }
