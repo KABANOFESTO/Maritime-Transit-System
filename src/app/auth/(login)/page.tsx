@@ -63,9 +63,9 @@ export default function SignIn() {
     }
 
     try {
-      console.log('Attempting sign-in with:', { 
+      console.log('Attempting sign-in with:', {
         email: formData.email,
-        passwordLength: formData.password.length 
+        passwordLength: formData.password.length
       });
 
       // First, check if there's an existing session
@@ -88,10 +88,10 @@ export default function SignIn() {
 
       if (result?.error) {
         console.error('SignIn error:', result.error);
-        
+
         // Handle different error types
         let errorMessage = 'Login failed. Please try again.';
-        
+
         switch (result.error) {
           case 'CredentialsSignin':
             errorMessage = 'Invalid email or password. Please check your credentials.';
@@ -118,14 +118,14 @@ export default function SignIn() {
         });
       } else if (result?.ok) {
         console.log('SignIn successful, fetching session...');
-        
+
         // Wait a moment for the session to be created
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         // Get session to check user role
         const session = await getSession();
         console.log('Current session:', session);
-        
+
         if (!session?.user) {
           toast.error('Session creation failed. Please try again.', {
             style: {
@@ -154,14 +154,14 @@ export default function SignIn() {
         // Redirect based on role
         const redirectPath = getRedirectPath(userRole);
         console.log('Redirecting to:', redirectPath);
-        
+
         // Clear form
         setFormData({
           email: '',
           password: '',
           rememberMe: false
         });
-        
+
         setTimeout(() => {
           router.push(redirectPath);
         }, 1500);
@@ -224,7 +224,7 @@ export default function SignIn() {
             fontWeight: '600',
           },
         });
-        
+
         // Redirect after successful Google sign in
         setTimeout(() => {
           router.push('/d');
@@ -262,16 +262,20 @@ export default function SignIn() {
       <div className="container mx-auto px-6 py-12">
         <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-between max-w-6xl mx-auto">
 
-          {/* Left Side - Sign In Form */}
+
           <div className="w-full lg:w-1/2 max-w-md">
             <div className="space-y-6">
-              {/* Header */}
-              <div className="space-y-2">
+              <div>
+                <Link href="/" className="flex items-center space-x-2 text-blue-600 hover:text-blue-700" style={{ textDecoration: 'none', justifyContent: 'center' }}>
+                  <Home className="w-5 h-5" />
+                  <span>Back to Home</span>
+                </Link>
+              </div>
+              <div className="space-y-2 justify-center text-center">
                 <h1 className="text-3xl font-bold text-gray-900">WELCOME BACK</h1>
                 <p className="text-gray-600">Welcome back! Please enter your details.</p>
               </div>
 
-              {/* Email Field */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-900">
                   Email

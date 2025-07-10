@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRegisterMutation } from '@/lib/redux/slices/AuthSlice';
+import { Home } from 'lucide-react';
 
 interface FormData {
   username: string;
@@ -58,7 +59,7 @@ export default function SignUp() {
 
       // Handle successful registration
       console.log('Registration successful:', result);
-      
+
       // Show a more engaging success message
       alert('🎉 Welcome! Your account has been created successfully. You can now sign in and start your journey with us!');
 
@@ -77,7 +78,7 @@ export default function SignUp() {
 
       // Improved error handling for PARSING_ERROR and other RTK Query errors
       let errorMessage = 'Registration failed. Please try again.';
-      
+
       // Check if it's a parsing error but registration might have succeeded
       if (err?.status === 'PARSING_ERROR') {
         console.warn('Parsing error occurred, but registration may have succeeded');
@@ -108,7 +109,7 @@ export default function SignUp() {
             errorMessage = 'Something unexpected happened. Please try again or contact support if the problem persists.';
         }
       }
-      
+
       alert(errorMessage);
     }
   };
@@ -116,7 +117,6 @@ export default function SignUp() {
   const handleGoogleSignUp = (e: React.MouseEvent<HTMLButtonElement>): void => {
     e.preventDefault();
     console.log('Google sign up');
-    // Handle Google sign up logic here
   };
 
   return (
@@ -124,16 +124,20 @@ export default function SignUp() {
       <div className="container mx-auto px-6 py-12">
         <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-between max-w-6xl mx-auto">
 
-          {/* Left Side - Sign Up Form */}
+
           <div className="w-full lg:w-1/2 max-w-md">
             <div className="space-y-6">
-              {/* Header */}
-              <div className="space-y-2">
+              <div>
+                <Link href="/" className="flex items-center space-x-2 text-blue-600 hover:text-blue-700" style={{ textDecoration: 'none',justifyContent: 'center' }}>
+                  <Home className="w-5 h-5" />
+                  <span>Back to Home</span>
+                </Link>
+              </div>
+              <div className="space-y-2" style={{ textAlign: 'center' }}>
                 <h1 className="text-3xl font-bold text-gray-900">CREATE AN ACCOUNT</h1>
                 <p className="text-gray-600">Join us! Please enter your details.</p>
               </div>
 
-              {/* Show error message if registration fails */}
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start space-x-3">
                   <div className="flex-shrink-0">
@@ -152,7 +156,7 @@ export default function SignUp() {
                       {(error as any)?.status === 'PARSING_ERROR' ? 'Registration Status Unclear' : 'Registration Failed'}
                     </h3>
                     <p className="mt-1 text-sm">
-                      {(error as any)?.status === 'PARSING_ERROR' 
+                      {(error as any)?.status === 'PARSING_ERROR'
                         ? 'Your account might have been created successfully! We had trouble confirming this. Please try signing in with your credentials.'
                         : (error as any)?.data?.message || (error as any)?.message || 'Something went wrong during registration. Please check your information and try again.'
                       }
