@@ -14,50 +14,47 @@ import java.util.List;
 
 @Configuration
 public class CorsConfig {
-    private static final Long MAX_AGE = 3600L;
+        private static final Long MAX_AGE = 3600L;
 
-    @Value("${app.cors.allowed-origins:http://localhost:5173,http://127.0.0.1:5501,http://localhost:3000}")
-    private List<String> allowedOrigins;
+        @Value("${app.cors.allowed-origins:http://localhost:5173,http://127.0.0.1:5501,http://192.168.1.117:8081,http://localhost:3000}")
+        private List<String> allowedOrigins;
 
-    @Bean
-    public CorsFilter corsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration config = new CorsConfiguration();
+        @Bean
+        public CorsFilter corsFilter() {
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowCredentials(true);
+                config.setAllowCredentials(true);
 
-        allowedOrigins.forEach(config::addAllowedOrigin);
+                allowedOrigins.forEach(config::addAllowedOrigin);
 
-        config.setAllowedHeaders(Arrays.asList(
-                HttpHeaders.AUTHORIZATION,
-                HttpHeaders.CONTENT_TYPE,
-                HttpHeaders.ACCEPT,
-                HttpHeaders.ORIGIN,
-                HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD,
-                HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS,
-                "X-Requested-With"
-        ));
+                config.setAllowedHeaders(Arrays.asList(
+                                HttpHeaders.AUTHORIZATION,
+                                HttpHeaders.CONTENT_TYPE,
+                                HttpHeaders.ACCEPT,
+                                HttpHeaders.ORIGIN,
+                                HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD,
+                                HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS,
+                                "X-Requested-With"));
 
-        config.setAllowedMethods(Arrays.asList(
-                HttpMethod.GET.name(),
-                HttpMethod.POST.name(),
-                HttpMethod.PUT.name(),
-                HttpMethod.DELETE.name(),
-                HttpMethod.OPTIONS.name(),
-                HttpMethod.PATCH.name()
-        ));
+                config.setAllowedMethods(Arrays.asList(
+                                HttpMethod.GET.name(),
+                                HttpMethod.POST.name(),
+                                HttpMethod.PUT.name(),
+                                HttpMethod.DELETE.name(),
+                                HttpMethod.OPTIONS.name(),
+                                HttpMethod.PATCH.name()));
 
-        config.setExposedHeaders(Arrays.asList(
-                HttpHeaders.AUTHORIZATION,
-                HttpHeaders.CONTENT_DISPOSITION
-        ));
+                config.setExposedHeaders(Arrays.asList(
+                                HttpHeaders.AUTHORIZATION,
+                                HttpHeaders.CONTENT_DISPOSITION));
 
-        config.setMaxAge(MAX_AGE);
+                config.setMaxAge(MAX_AGE);
 
-        source.registerCorsConfiguration("/api/**", config);
-        source.registerCorsConfiguration("/auth/**", config);
-        source.registerCorsConfiguration("/public/**", config);
+                source.registerCorsConfiguration("/api/**", config);
+                source.registerCorsConfiguration("/auth/**", config);
+                source.registerCorsConfiguration("/public/**", config);
 
-        return new CorsFilter(source);
-    }
+                return new CorsFilter(source);
+        }
 }

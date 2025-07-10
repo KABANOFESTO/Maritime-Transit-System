@@ -38,7 +38,7 @@ public class AnalyticsLogService {
     }
 
     public AnalyticsLog createAnalyticsLog(AnalyticsLogRequest request) {
-        // Check if log already exists for this date
+    
         if (analyticsLogRepository.findByDate(request.getDate()).isPresent()) {
             throw new RuntimeException("Analytics log already exists for this date");
         }

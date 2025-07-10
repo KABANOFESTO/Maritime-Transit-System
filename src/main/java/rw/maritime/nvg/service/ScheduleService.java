@@ -69,6 +69,10 @@ public class ScheduleService {
         schedule.setRoute(route);
         schedule.setDepartureTime(request.getDepartureTime());
         schedule.setArrivalTime(request.getArrivalTime());
+        schedule.setTotalSeats(request.getTotalSeats());
+        schedule.setTotalCargoCapacity(request.getTotalCargoCapacity());
+        schedule.setSeatPrice(request.getSeatPrice());
+        schedule.setCargoPricePerKg(request.getCargoPricePerKg());
 
         return scheduleRepository.save(schedule);
     }
@@ -86,6 +90,10 @@ public class ScheduleService {
                     schedule.setRoute(route);
                     schedule.setDepartureTime(request.getDepartureTime());
                     schedule.setArrivalTime(request.getArrivalTime());
+                    schedule.setTotalSeats(request.getTotalSeats());
+                    schedule.setTotalCargoCapacity(request.getTotalCargoCapacity());
+                    schedule.setSeatPrice(request.getSeatPrice());
+                    schedule.setCargoPricePerKg(request.getCargoPricePerKg());
 
                     return scheduleRepository.save(schedule);
                 })

@@ -12,6 +12,8 @@ import rw.maritime.nvg.model.Ticket;
 import rw.maritime.nvg.service.TicketService;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -35,13 +37,6 @@ public class TicketController {
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id: " + id));
     }
 
-    @GetMapping("/passenger/{passengerId}")
-    public ResponseEntity<List<Ticket>> getTicketsByPassenger(
-            @PathVariable Long passengerId) {
-        List<Ticket> tickets = ticketService.getTicketsByPassenger(passengerId);
-        return tickets.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(tickets);
-    }
-
     @GetMapping("/schedule/{scheduleId}")
     public ResponseEntity<List<Ticket>> getTicketsBySchedule(
             @PathVariable Long scheduleId) {
@@ -63,7 +58,7 @@ public class TicketController {
         if (bindingResult.hasErrors()) {
             throw new ValidationException(bindingResult.getFieldErrors());
         }
-        
+
         Ticket createdTicket = ticketService.createTicket(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTicket);
     }
@@ -76,7 +71,7 @@ public class TicketController {
         if (bindingResult.hasErrors()) {
             throw new ValidationException(bindingResult.getFieldErrors());
         }
-        
+
         return ResponseEntity.ok(ticketService.updateTicket(id, request));
     }
 
@@ -84,5 +79,39 @@ public class TicketController {
     public ResponseEntity<Void> deleteTicket(@PathVariable Long id) {
         ticketService.deleteTicket(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // NEW: Seat management endpoints
+    @GetMapping("/schedule/{scheduleId}/seats/info")
+    public ResponseEntity<Map<String, Object>> getSeatsInfo(@PathVariable Long scheduleId) {
+        Map<String, Object> seatsInfo = new HashMap<>();
+        seatsInfo.put("totalSeats", ticketService.getTotalSeats(scheduleId));
+        seatsInfo.put("bookedSeats", ticketService.getBookedSeatsCount(scheduleId));
+        seatsInfo.put("availableSeats", ticketService.getAvailableSeatsCount(scheduleId));
+        seatsInfo.put("bookedSeatNumbers", ticketService.getBookedSeats(scheduleId));
+
+        return ResponseEntity.ok(seatsInfo);
+    }
+
+    @GetMapping("/schedule/{scheduleId}/seats/booked")
+    public ResponseEntity<List<String>> getBookedSeats(@PathVariable Long scheduleId) {
+        List<String> bookedSeats = ticketService.getBookedSeats(scheduleId);
+        return ResponseEntity.ok(bookedSeats);
+    }
+
+    @GetMapping("/schedule/{scheduleId}/seats/available")
+    public ResponseEntity<Integer> getAvailableSeatsCount(@PathVariable Long scheduleId) {
+        int availableSeats = ticketService.getAvailableSeatsCount(scheduleId);
+        return ResponseEntity.ok(availableSeats);
+    }
+
+    @GetMapping("/schedule/{scheduleId}/seats/{seatNumber}/available")
+    public ResponseEntity<Map<String, Boolean>> checkSeatAvailability(
+            @PathVariable Long scheduleId,
+            @PathVariable String seatNumber) {
+        boolean available = ticketService.isSeatAvailable(scheduleId, seatNumber);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("available", available);
+        return ResponseEntity.ok(response);
     }
 }

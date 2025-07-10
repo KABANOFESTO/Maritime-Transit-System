@@ -25,9 +25,23 @@ public class ScheduleRequest {
     @Future(message = "Arrival time must be in the future")
     private LocalDateTime arrivalTime;
 
-    /**
-     * Validates that arrival time is after departure time
-     */
+    @NotNull(message = "Total seats is required")
+    @Positive(message = "Total seats must be a positive number")
+    private Integer totalSeats;
+
+    // Add these missing fields:
+    @NotNull(message = "Total cargo capacity is required")
+    @Positive(message = "Total cargo capacity must be a positive number")
+    private Double totalCargoCapacity;
+
+    @NotNull(message = "Seat price is required")
+    @Positive(message = "Seat price must be a positive number")
+    private Double seatPrice;
+
+    @NotNull(message = "Cargo price per kg is required")
+    @Positive(message = "Cargo price per kg must be a positive number")
+    private Double cargoPricePerKg;
+
     public boolean isValidTimeRange() {
         return arrivalTime.isAfter(departureTime);
     }

@@ -75,15 +75,16 @@ public class WebSecurityConfig {
                                 "/public/**",
                                 "/error")
                         .permitAll()
-                        
+
                         .requestMatchers("/api/users/all").authenticated()
                         .requestMatchers("/api/users/delete/**").authenticated()
                         .requestMatchers("/api/complaints/**").authenticated()
                         .requestMatchers("/api/schedules/**").authenticated()
                         .requestMatchers("/api/vessels/**").authenticated()
-                        .requestMatchers("/api/bins/**").authenticated()
+                        .requestMatchers("/api/cargo-bookings/**").authenticated()
                         .requestMatchers("/api/routes/**").authenticated()
-                        
+                        .requestMatchers("/api/ticket-bookings/**").authenticated()
+
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(authenticationTokenFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -98,6 +99,7 @@ public class WebSecurityConfig {
                 "http://localhost:5173",
                 "http://127.0.0.1:5501",
                 "http://localhost:3000",
+                "exp://192.168.1.117:8081",
                 "http://127.0.0.1:5500"));
         configuration.setAllowCredentials(true);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));

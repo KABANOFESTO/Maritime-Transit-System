@@ -34,5 +34,11 @@ public class Cargo {
     private Schedule schedule;
 
     @Column(nullable = false)
-    private String currentStatus; // e.g., "In Transit", "Delivered"
+    private String currentStatus;
+
+    @Column(nullable = false)
+    private double price;
+
+    @OneToOne(mappedBy = "cargo", cascade = CascadeType.ALL)
+    private CargoPayment cargoPayment;
 }

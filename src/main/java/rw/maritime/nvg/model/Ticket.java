@@ -11,14 +11,9 @@ import lombok.*;
 @AllArgsConstructor
 @ToString
 public class Ticket {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "passenger_id")
-    private User passenger;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "schedule_id")
@@ -28,8 +23,8 @@ public class Ticket {
     private String seatNumber;
 
     @Column(nullable = false)
-    private double price;
-
-    @Column(nullable = false)
     private boolean paid;
+
+    @OneToOne(mappedBy = "ticket", cascade = CascadeType.ALL)
+    private TicketPayment ticketPayment;
 }
