@@ -40,6 +40,18 @@ const cargoApi = apiSlice.injectEndpoints({
                 },
             }),
         }),
+        updateStatus: builder.mutation({
+            query: ({ id, status }) => ({
+                url: `/cargo/${id}/status`,
+                method: "PATCH",
+                body: { status },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+            }),
+        }),
+
         deleteCargo: builder.mutation({
             query: (id) => ({
                 url: `/cargo/${id}`,
@@ -52,6 +64,7 @@ const cargoApi = apiSlice.injectEndpoints({
 export const {
     useGetCargoesQuery,
     useGetCargoByIdQuery,
+    useUpdateStatusMutation,
     useCreateCargoMutation,
     useUpdateCargoMutation,
     useDeleteCargoMutation,

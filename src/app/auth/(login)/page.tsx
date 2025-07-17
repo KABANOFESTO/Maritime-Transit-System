@@ -194,7 +194,7 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
-      // Check for existing session and sign out if needed
+
       const existingSession = await getSession();
       if (existingSession) {
         console.log('Found existing session, signing out first...');
@@ -266,7 +266,7 @@ export default function SignIn() {
           <div className="w-full lg:w-1/2 max-w-md">
             <div className="space-y-6">
               <div>
-                <Link href="/" className="flex items-center space-x-2 text-blue-600 hover:text-blue-700" style={{ textDecoration: 'none', justifyContent: 'center' }}>
+                <Link href="/" className="flex items-center space-x-2 hover:text-blue-700" style={{ textDecoration: 'none', justifyContent: 'center', color: 'skyblue' }}>
                   <Home className="w-5 h-5" />
                   <span>Back to Home</span>
                 </Link>
@@ -292,7 +292,6 @@ export default function SignIn() {
                 />
               </div>
 
-              {/* Password Field */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-900">
                   Password
@@ -309,7 +308,6 @@ export default function SignIn() {
                 />
               </div>
 
-              {/* Remember Me & Forgot Password */}
               <div className="flex items-center justify-between">
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
@@ -327,7 +325,6 @@ export default function SignIn() {
                 </Link>
               </div>
 
-              {/* Sign In Button */}
               <button
                 onClick={handleSignIn}
                 disabled={isLoading || !formData.email || !formData.password}
@@ -346,7 +343,6 @@ export default function SignIn() {
                 )}
               </button>
 
-              {/* Google Sign In Button */}
               <button
                 onClick={handleGoogleSignIn}
                 disabled={isLoading}
@@ -361,7 +357,7 @@ export default function SignIn() {
                 <span>Sign in with Google</span>
               </button>
 
-              {/* Sign Up Link */}
+
               <p className="text-center text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link href="/auth/signup" className="text-red-500 hover:text-red-600 font-medium">
@@ -371,7 +367,7 @@ export default function SignIn() {
             </div>
           </div>
 
-          {/* Right Side - Ship Illustration */}
+
           <div className="w-full lg:w-1/2 flex justify-center lg:justify-end mt-12 lg:mt-0">
             <div className="relative">
               <Image

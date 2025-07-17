@@ -115,7 +115,7 @@ const CargoStatusDetails: React.FC = () => {
   const { data: cargoes, isLoading, error } = useGetCargoesQuery({});
   
   const totalCargo = cargoes?.length || 0;
-  const registeredCargo = cargoes?.filter((cargo: any) => cargo.currentStatus === 'Registered').length || 0;
+  const pendingCargo = cargoes?.filter((cargo: any) => cargo.currentStatus === 'PENDING').length || 0;
   const totalWeight = cargoes?.reduce((sum: number, cargo: any) => sum + cargo.weight, 0) || 0;
   
   return (
@@ -140,8 +140,8 @@ const CargoStatusDetails: React.FC = () => {
             <span className="text-sm font-semibold text-gray-900">{totalCargo}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Registered:</span>
-            <span className="text-sm font-semibold text-blue-600">{registeredCargo}</span>
+            <span className="text-sm text-gray-600">Pending:</span>
+            <span className="text-sm font-semibold text-blue-600">{pendingCargo}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Total Weight:</span>

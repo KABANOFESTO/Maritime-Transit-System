@@ -65,14 +65,12 @@ export default function Sidebar() {
     };
 
     const performLogout = () => {
-        // Clear all localStorage data
+        
         localStorage.clear();
 
-        // Redirect to auth page
         router.push('/auth');
     };
 
-    // Confirm Dialog Component
     type ConfirmDialogProps = {
         open: boolean;
         setOpen: (open: boolean) => void;
@@ -160,8 +158,6 @@ export default function Sidebar() {
                         </ul>
                     </div>
                 </div>
-
-                {/* Logout Button */}
                 <div className="p-4 border-t border-gray-200">
                     <button
                         onClick={handleLogout}
