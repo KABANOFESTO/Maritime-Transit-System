@@ -29,7 +29,7 @@ public class Complaint {
     private String message;
 
     @Column(nullable = false)
-    private String status; // e.g., "Pending", "Resolved"
+    private String status; 
 
     @Column(nullable = false)
     private LocalDateTime submittedAt;
