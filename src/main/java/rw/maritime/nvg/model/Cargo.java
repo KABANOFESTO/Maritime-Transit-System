@@ -33,8 +33,9 @@ public class Cargo {
     @JoinColumn(name = "schedule_id")
     private Schedule schedule;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String currentStatus;
+    private CargoStatus currentStatus;
 
     @Column(nullable = false)
     private double price;

@@ -90,13 +90,10 @@ public class CargoService {
         cargo.setPrice(price);
         cargo.setTrackingNumber(trackingNumber);
         cargo.setSchedule(schedule);
-        cargo.setCurrentStatus("Registered");
+        cargo.setCurrentStatus(CargoStatus.PENDING);
 
-        // Save the cargo first
         Cargo savedCargo = cargoRepository.save(cargo);
 
-        // Add the cargo to the schedule's list - the weight will be calculated
-        // automatically
         if (schedule.getCargo() == null) {
             schedule.setCargo(new ArrayList<>());
         }
@@ -106,25 +103,16 @@ public class CargoService {
         return savedCargo;
     }
 
-    /**
-     * Calculate cargo price based on weight and schedule's price per kg
-     */
     public double calculateCargoPrice(Schedule schedule, double weight) {
         return weight * schedule.getCargoPricePerKg();
     }
 
-    /**
-     * Get cargo price for a specific weight on a schedule
-     */
     public double getCargoPrice(Long scheduleId, double weight) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
         return calculateCargoPrice(schedule, weight);
     }
 
-    /**
-     * Check if cargo can be booked for a schedule
-     */
     public boolean canBookCargo(Long scheduleId, double weight) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
@@ -132,9 +120,6 @@ public class CargoService {
         return schedule.canAddCargo(weight);
     }
 
-    /**
-     * Get available cargo capacity for a schedule
-     */
     public double getAvailableCargoCapacity(Long scheduleId) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
@@ -142,9 +127,6 @@ public class CargoService {
         return schedule.getAvailableCargoCapacity();
     }
 
-    /**
-     * Get total cargo capacity for a schedule
-     */
     public double getTotalCargoCapacity(Long scheduleId) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
@@ -152,9 +134,6 @@ public class CargoService {
         return schedule.getTotalCargoCapacity();
     }
 
-    /**
-     * Get booked cargo weight for a schedule
-     */
     public double getBookedCargoWeight(Long scheduleId) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
@@ -162,9 +141,6 @@ public class CargoService {
         return schedule.getBookedCargoWeight();
     }
 
-    /**
-     * Get cargo utilization percentage for a schedule
-     */
     public double getCargoUtilizationPercentage(Long scheduleId) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
@@ -176,10 +152,7 @@ public class CargoService {
         return (schedule.getBookedCargoWeight() / schedule.getTotalCargoCapacity()) * 100;
     }
 
-    /**
-     * Update cargo status with additional validation
-     */
-    public Cargo updateCargoStatus(Long id, String status) {
+    public Cargo updateCargoStatus(Long id, CargoStatus status) {
         return cargoRepository.findById(id)
                 .map(cargo -> {
                     cargo.setCurrentStatus(status);
@@ -188,9 +161,6 @@ public class CargoService {
                 .orElseThrow(() -> new RuntimeException("Cargo not found"));
     }
 
-    /**
-     * Update cargo weight with capacity validation and price recalculation
-     */
     public Cargo updateCargoWeight(Long id, double newWeight) throws InsufficientCargoCapacityException {
         if (newWeight <= 0) {
             throw new IllegalArgumentException("Cargo weight must be positive");
@@ -203,7 +173,6 @@ public class CargoService {
         double currentWeight = cargo.getWeight();
         double weightDifference = newWeight - currentWeight;
 
-        // Check if the weight increase can be accommodated
         if (weightDifference > 0 && !schedule.canAddCargo(weightDifference)) {
             throw new InsufficientCargoCapacityException(
                     String.format(
@@ -211,7 +180,6 @@ public class CargoService {
                             weightDifference, schedule.getAvailableCargoCapacity()));
         }
 
-        // Recalculate price if weight changed
         if (weightDifference != 0) {
             double newPrice = calculateCargoPrice(schedule, newWeight);
             cargo.setPrice(newPrice);
@@ -221,16 +189,10 @@ public class CargoService {
         return cargoRepository.save(cargo);
     }
 
-    /**
-     * Delete cargo
-     */
     public void deleteCargo(Long id) {
         cargoRepository.deleteById(id);
     }
 
-    /**
-     * Get cargo capacity summary for a schedule
-     */
     public CargoCapacitySummary getCargoCapacitySummary(Long scheduleId) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
@@ -242,9 +204,6 @@ public class CargoService {
                 getCargoUtilizationPercentage(scheduleId));
     }
 
-    /**
-     * Get cargo price summary for a specific weight on a schedule
-     */
     public CargoPriceSummary getCargoPriceSummary(Long scheduleId, double weight) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
@@ -255,9 +214,6 @@ public class CargoService {
         return new CargoPriceSummary(pricePerKg, weight, totalPrice);
     }
 
-    /**
-     * Inner class for cargo capacity summary
-     */
     public static class CargoCapacitySummary {
         private final double totalCapacity;
         private final double bookedWeight;
@@ -272,7 +228,6 @@ public class CargoService {
             this.utilizationPercentage = utilizationPercentage;
         }
 
-        // Getters
         public double getTotalCapacity() {
             return totalCapacity;
         }
@@ -290,9 +245,6 @@ public class CargoService {
         }
     }
 
-    /**
-     * Inner class for cargo price summary
-     */
     public static class CargoPriceSummary {
         private final double pricePerKg;
         private final double weight;
@@ -304,7 +256,6 @@ public class CargoService {
             this.totalPrice = totalPrice;
         }
 
-        // Getters
         public double getPricePerKg() {
             return pricePerKg;
         }

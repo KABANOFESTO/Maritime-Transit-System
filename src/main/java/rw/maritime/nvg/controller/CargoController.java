@@ -2,7 +2,6 @@ package rw.maritime.nvg.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -12,11 +11,11 @@ import rw.maritime.nvg.exception.InsufficientCargoCapacityException;
 import rw.maritime.nvg.exception.ResourceNotFoundException;
 import rw.maritime.nvg.exception.ValidationException;
 import rw.maritime.nvg.model.Cargo;
+import rw.maritime.nvg.model.CargoStatus;
 import rw.maritime.nvg.service.CargoService;
 
 import java.util.List;
 import java.util.Map;
-
 
 @RestController
 @RequestMapping("/api/cargo")
@@ -46,7 +45,7 @@ public class CargoController {
         return cargoService.getCargoByTrackingNumber(trackingNumber)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                    "Cargo not found with tracking number: " + trackingNumber));
+                        "Cargo not found with tracking number: " + trackingNumber));
     }
 
     @GetMapping("/owner/{ownerId}")
@@ -86,32 +85,28 @@ public class CargoController {
         if (bindingResult.hasErrors()) {
             throw new ValidationException(bindingResult.getFieldErrors());
         }
-        
+
         try {
             Cargo createdCargo = cargoService.createCargo(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdCargo);
         } catch (InsufficientCargoCapacityException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
-                        "error", "INSUFFICIENT_CARGO_CAPACITY",
-                        "message", e.getMessage()
-                    ));
+                            "error", "INSUFFICIENT_CARGO_CAPACITY",
+                            "message", e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
-                        "error", "INVALID_REQUEST",
-                        "message", e.getMessage()
-                    ));
+                            "error", "INVALID_REQUEST",
+                            "message", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
-                        "error", "RESOURCE_NOT_FOUND",
-                        "message", e.getMessage()
-                    ));
+                            "error", "RESOURCE_NOT_FOUND",
+                            "message", e.getMessage()));
         }
     }
 
-  
     @PostMapping("/schedule/{scheduleId}/check-capacity")
     public ResponseEntity<Map<String, Object>> checkCargoCapacity(
             @PathVariable Long scheduleId,
@@ -120,47 +115,42 @@ public class CargoController {
             double weight = request.get("weight");
             boolean canBook = cargoService.canBookCargo(scheduleId, weight);
             double availableCapacity = cargoService.getAvailableCargoCapacity(scheduleId);
-            
+
             return ResponseEntity.ok(Map.of(
-                "canBook", canBook,
-                "availableCapacity", availableCapacity,
-                "requestedWeight", weight,
-                "message", canBook ? "Cargo can be booked" : "Insufficient cargo capacity"
-            ));
+                    "canBook", canBook,
+                    "availableCapacity", availableCapacity,
+                    "requestedWeight", weight,
+                    "message", canBook ? "Cargo can be booked" : "Insufficient cargo capacity"));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of(
-                        "error", "SCHEDULE_NOT_FOUND",
-                        "message", e.getMessage()
-                    ));
+                            "error", "SCHEDULE_NOT_FOUND",
+                            "message", e.getMessage()));
         }
     }
-
 
     @GetMapping("/schedule/{scheduleId}/capacity")
     public ResponseEntity<Map<String, Object>> getCargoCapacity(@PathVariable Long scheduleId) {
         try {
             CargoService.CargoCapacitySummary summary = cargoService.getCargoCapacitySummary(scheduleId);
-            
+
             return ResponseEntity.ok(Map.of(
-                "totalCapacity", summary.getTotalCapacity(),
-                "bookedWeight", summary.getBookedWeight(),
-                "availableCapacity", summary.getAvailableCapacity(),
-                "utilizationPercentage", summary.getUtilizationPercentage()
-            ));
+                    "totalCapacity", summary.getTotalCapacity(),
+                    "bookedWeight", summary.getBookedWeight(),
+                    "availableCapacity", summary.getAvailableCapacity(),
+                    "utilizationPercentage", summary.getUtilizationPercentage()));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of(
-                        "error", "SCHEDULE_NOT_FOUND",
-                        "message", e.getMessage()
-                    ));
+                            "error", "SCHEDULE_NOT_FOUND",
+                            "message", e.getMessage()));
         }
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<Cargo> updateCargoStatus(
             @PathVariable Long id,
-            @RequestParam @NotBlank String status) {
+            @RequestParam @NotBlank CargoStatus status) {
         try {
             Cargo updatedCargo = cargoService.updateCargoStatus(id, status);
             return ResponseEntity.ok(updatedCargo);
@@ -168,7 +158,6 @@ public class CargoController {
             throw new ResourceNotFoundException("Cargo not found with id: " + id);
         }
     }
-
 
     @PatchMapping("/{id}/weight")
     public ResponseEntity<?> updateCargoWeight(
@@ -179,25 +168,22 @@ public class CargoController {
             if (newWeight <= 0) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of(
-                            "error", "INVALID_WEIGHT",
-                            "message", "Weight must be positive"
-                        ));
+                                "error", "INVALID_WEIGHT",
+                                "message", "Weight must be positive"));
             }
-            
+
             Cargo updatedCargo = cargoService.updateCargoWeight(id, newWeight);
             return ResponseEntity.ok(updatedCargo);
         } catch (InsufficientCargoCapacityException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
-                        "error", "INSUFFICIENT_CARGO_CAPACITY",
-                        "message", e.getMessage()
-                    ));
+                            "error", "INSUFFICIENT_CARGO_CAPACITY",
+                            "message", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of(
-                        "error", "CARGO_NOT_FOUND",
-                        "message", e.getMessage()
-                    ));
+                            "error", "CARGO_NOT_FOUND",
+                            "message", e.getMessage()));
         }
     }
 
@@ -207,7 +193,7 @@ public class CargoController {
             double utilizationPercentage = cargoService.getCargoUtilizationPercentage(scheduleId);
             double totalCapacity = cargoService.getTotalCargoCapacity(scheduleId);
             double bookedWeight = cargoService.getBookedCargoWeight(scheduleId);
-            
+
             String utilizationLevel;
             if (utilizationPercentage >= 90) {
                 utilizationLevel = "HIGH";
@@ -216,20 +202,18 @@ public class CargoController {
             } else {
                 utilizationLevel = "LOW";
             }
-            
+
             return ResponseEntity.ok(Map.of(
-                "utilizationPercentage", utilizationPercentage,
-                "utilizationLevel", utilizationLevel,
-                "totalCapacity", totalCapacity,
-                "bookedWeight", bookedWeight,
-                "availableCapacity", totalCapacity - bookedWeight
-            ));
+                    "utilizationPercentage", utilizationPercentage,
+                    "utilizationLevel", utilizationLevel,
+                    "totalCapacity", totalCapacity,
+                    "bookedWeight", bookedWeight,
+                    "availableCapacity", totalCapacity - bookedWeight));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of(
-                        "error", "SCHEDULE_NOT_FOUND",
-                        "message", e.getMessage()
-                    ));
+                            "error", "SCHEDULE_NOT_FOUND",
+                            "message", e.getMessage()));
         }
     }
 
