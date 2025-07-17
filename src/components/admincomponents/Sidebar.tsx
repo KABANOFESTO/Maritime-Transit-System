@@ -8,6 +8,7 @@ import {
     Shield,
     AlertTriangle,
     LogOut,
+    Settings,
     Menu,
     X
 } from "lucide-react";
@@ -46,6 +47,11 @@ const items = [
         url: "/Admin/System-Alert",
         icon: AlertTriangle,
     },
+    {
+        title: "Profile & settings",
+        url: "/Admin/settings",
+        icon: Settings,
+    },
 ];
 
 export default function Sidebar() {
@@ -61,7 +67,7 @@ export default function Sidebar() {
     const performLogout = () => {
         // Clear all localStorage data
         localStorage.clear();
-        
+
         // Redirect to auth page
         router.push('/auth');
     };
@@ -140,11 +146,10 @@ export default function Sidebar() {
                                 <li key={item.title}>
                                     <Link
                                         href={item.url}
-                                        className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                                            pathname === item.url
+                                        className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${pathname === item.url
                                                 ? 'bg-blue-400 text-white'
                                                 : 'text-gray-600 hover:bg-gray-200'
-                                        }`}
+                                            }`}
                                         onClick={() => setIsMobileOpen(false)}
                                     >
                                         <item.icon size={18} />

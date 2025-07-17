@@ -1,220 +1,342 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Printer, Download, Loader2, AlertCircle, Check, X, Clock } from 'lucide-react';
+import { useGetTicketsQuery, useGetTicketByIdQuery } from '@/lib/redux/slices/TicketSlice';
+import { format } from 'date-fns';
 
-interface TicketDetailsProps {
-  // You can make these props dynamic if needed
-  ticketData?: {
-    ticketId: string;
-    passengerName: string;
-    vessel: string;
-    departureDate: string;
-    ticketPrice: string;
-    route: string;
-    seatNumber: string;
+interface Ticket {
+  id: number;
+  seatNumber: string;
+  paid: boolean;
+  schedule: {
+    id: number;
+    vessel: {
+      name: string;
+      type: string;
+    };
+    route: {
+      departurePort: string;
+      destinationPort: string;
+    };
     departureTime: string;
-    paymentStatus: 'Paid' | 'Pending' | 'Failed';
-    status: 'Confirmed' | 'Pending' | 'Cancelled';
+    arrivalTime: string;
+    seatPrice: number;
   };
 }
 
-const TicketDetails: React.FC<TicketDetailsProps> = ({ 
-  ticketData = {
-    ticketId: 'TKT001',
-    passengerName: 'Ghislaine Biyo',
-    vessel: 'Ocean Explorer',
-    departureDate: '2024-02-15',
-    ticketPrice: '$135.50',
-    route: 'Victoria-Kivu',
-    seatNumber: '12A',
-    departureTime: '08:00',
-    paymentStatus: 'Paid',
-    status: 'Confirmed'
-  }
-}) => {
+const TicketDashboard = () => {
+  // Fetch all tickets
+  const { data: tickets, isLoading, isError, error } = useGetTicketsQuery({});
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
+
+
+  const { data: selectedTicket } = useGetTicketByIdQuery(selectedTicketId as number, {
+    skip: !selectedTicketId,
+  });
+
+
+  useEffect(() => {
+    if (tickets && tickets.length > 0 && !selectedTicketId) {
+      setSelectedTicketId(tickets[0].id);
+    }
+  }, [tickets, selectedTicketId]);
+
+  const getStatusColor = (paid: boolean) => {
+    return paid
+      ? 'bg-green-100 text-green-700 border-green-200'
+      : 'bg-yellow-100 text-yellow-700 border-yellow-200';
+  };
+
+  const getStatusIcon = (paid: boolean) => {
+    return paid
+      ? <Check className="w-4 h-4 text-green-500" />
+      : <Clock className="w-4 h-4 text-yellow-500" />;
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'PPPpp');
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
   const handlePrint = () => {
     window.print();
   };
 
   const handleExport = () => {
-    // Export functionality - could be PDF, CSV, etc.
     console.log('Exporting ticket details...');
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin h-12 w-12 text-blue-500" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white p-6 rounded-lg shadow-md max-w-md text-center">
+          <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Tickets</h2>
+          <p className="text-gray-600 mb-4">
+            {error?.toString() || 'Failed to load ticket data. Please try again later.'}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      {/* Main Container with same horizontal padding as navbar */}
-      <div className="px-6 max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
-            
-            {/* Left Side - Ticket Card */}
-            <div className="relative p-8 bg-gradient-to-br from-blue-50 to-indigo-50">
-              {/* Ticket Stub */}
-              <div className="bg-white rounded-lg shadow-md p-6 relative">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">
-                      {ticketData.passengerName}
-                    </h2>
-                    <p className="text-gray-600 text-sm">
-                      Destination: {ticketData.route.split('-').join(' Port - ')} Berlt
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      ticketData.status === 'Confirmed' 
-                        ? 'bg-green-100 text-green-800' 
-                        : ticketData.status === 'Pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {ticketData.status}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Decorative perforated edge */}
-                <div className="absolute right-0 top-0 bottom-0 w-6 bg-gray-50 flex flex-col justify-center items-center space-y-2">
-                  {[...Array(8)].map((_, i) => (
-                    <div key={i} className="w-2 h-2 bg-white rounded-full"></div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Decorative elements */}
-              <div className="absolute top-4 right-4 opacity-10">
-                <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-                  <path d="M60 20L70 50H100L77.5 67.5L87.5 97.5L60 80L32.5 97.5L42.5 67.5L20 50H50L60 20Z" fill="currentColor"/>
-                </svg>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gray-50">
 
-            {/* Right Side - Ticket Details */}
-            <div className="p-8">
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  Ticket Details: {ticketData.ticketId}
-                </h1>
+      <div className="px-6 py-6">
+        <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
+
+          <div className="flex-1 lg:max-w-md">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+                <h2 className="text-lg font-semibold text-gray-900">My Tickets</h2>
+                <span className="text-sm text-gray-500">
+                  {tickets?.length || 0} tickets
+                </span>
               </div>
 
-              <div className="space-y-6">
-                {/* Passenger Info */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
-                      Passenger Name:
-                    </label>
-                    <p className="text-gray-900 font-medium">{ticketData.passengerName}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
-                      Vessel:
-                    </label>
-                    <p className="text-gray-900 font-medium">{ticketData.vessel}</p>
-                  </div>
-                </div>
+              <div className="divide-y divide-gray-100 max-h-[calc(100vh-180px)] overflow-y-auto">
+                {tickets?.map((ticket: Ticket, index: number) => (
+                  <div
+                    key={ticket.id}
+                    className={`p-4 cursor-pointer transition-colors hover:bg-gray-50 ${selectedTicketId === ticket.id
+                        ? 'bg-blue-50 border-r-2 border-blue-500'
+                        : ''
+                      }`}
+                    onClick={() => setSelectedTicketId(ticket.id)}
+                  >
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                        {index < (tickets?.length || 0) - 1 && (
+                          <div className="w-0.5 h-12 bg-gray-200 mt-2"></div>
+                        )}
+                      </div>
 
-                {/* Journey Details */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
-                      Departure Date:
-                    </label>
-                    <p className="text-gray-900 font-medium">{ticketData.departureDate}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
-                      Ticket Price:
-                    </label>
-                    <p className="text-gray-900 font-bold text-lg">{ticketData.ticketPrice}</p>
-                  </div>
-                </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold text-gray-900 text-sm">
+                            {ticket.schedule.vessel.name}
+                          </h3>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(ticket.paid)
+                              }`}
+                          >
+                            {ticket.paid ? 'Paid' : 'Pending'}
+                          </span>
+                        </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
-                      Route:
-                    </label>
-                    <p className="text-gray-900 font-medium">{ticketData.route}</p>
+                        <div className="space-y-1 text-xs text-gray-600">
+                          <p>
+                            <span className="font-medium">From:</span> {ticket.schedule.route.departurePort}
+                          </p>
+                          <p>
+                            <span className="font-medium">To:</span> {ticket.schedule.route.destinationPort}
+                          </p>
+                          <p>
+                            <span className="font-medium">Seat:</span> {ticket.seatNumber}
+                          </p>
+                          <p>
+                            <span className="font-medium">Departure:</span> {formatDate(ticket.schedule.departureTime)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
-                      Seat Number:
-                    </label>
-                    <p className="text-gray-900 font-medium">{ticketData.seatNumber}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
-                      Departure Time:
-                    </label>
-                    <p className="text-gray-900 font-medium">{ticketData.departureTime}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
-                      Payment Status:
-                    </label>
-                    <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                      ticketData.paymentStatus === 'Paid'
-                        ? 'bg-green-100 text-green-800'
-                        : ticketData.paymentStatus === 'Pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {ticketData.paymentStatus}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t border-gray-200">
-                <button
-                  onClick={handlePrint}
-                  className="flex items-center justify-center px-6 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  Print
-                </button>
-                <button
-                  onClick={handleExport}
-                  className="flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Export
-                </button>
+                ))}
               </div>
             </div>
           </div>
+
+          {/* Right Panel - Ticket Details */}
+          <div className="flex-1">
+            {selectedTicket ? (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      Ticket: #{selectedTicket.id}
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Booked on {formatDate(selectedTicket.schedule.departureTime)}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(selectedTicket.paid)
+                      }`}
+                  >
+                    {selectedTicket.paid ? 'Paid' : 'Pending Payment'}
+                  </span>
+                </div>
+
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                          Departure Port
+                        </label>
+                        <p className="text-lg text-gray-900">
+                          {selectedTicket.schedule.route.departurePort}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                          Vessel
+                        </label>
+                        <p className="text-lg text-gray-900">
+                          {selectedTicket.schedule.vessel.name} ({selectedTicket.schedule.vessel.type})
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                          Seat Number
+                        </label>
+                        <p className="text-lg text-gray-900 font-mono">
+                          {selectedTicket.seatNumber}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                          Destination Port
+                        </label>
+                        <p className="text-lg text-gray-900">
+                          {selectedTicket.schedule.route.destinationPort}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                          Departure Time
+                        </label>
+                        <p className="text-lg text-gray-900">
+                          {formatDate(selectedTicket.schedule.departureTime)}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                          Estimated Arrival
+                        </label>
+                        <p className="text-lg text-gray-900">
+                          {formatDate(selectedTicket.schedule.arrivalTime)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-500 mb-1">
+                        Ticket Price
+                      </label>
+                      <p className="text-xl font-semibold text-gray-900">
+                        {formatCurrency(selectedTicket.schedule.seatPrice)}
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-500 mb-1">
+                        Payment Status
+                      </label>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(selectedTicket.paid)}
+                        <span className="text-xl font-semibold text-gray-900">
+                          {selectedTicket.paid ? 'Paid' : 'Pending'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-500 mb-1">
+                        Ticket ID
+                      </label>
+                      <p className="text-xl font-semibold text-gray-900">
+                        #{selectedTicket.id}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                      onClick={handlePrint}
+                    >
+                      <Printer size={18} />
+                      Print Ticket
+                    </button>
+
+                    <button
+                      className="flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      onClick={handleExport}
+                    >
+                      <Download size={18} />
+                      Export
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex items-center justify-center h-full">
+                <div className="text-center">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No ticket selected
+                  </h3>
+                  <p className="text-gray-500">
+                    {tickets?.length === 0
+                      ? 'You have no tickets yet.'
+                      : 'Select a ticket from the list to view details.'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Additional Actions or Information */}
         <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Travel Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div className="flex items-center text-gray-600">
-              <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <Check className="w-5 h-5 mr-2 text-green-500" />
               Check-in opens 2 hours before departure
             </div>
             <div className="flex items-center text-gray-600">
-              <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Boarding pass required at gate
+              <Clock className="w-5 h-5 mr-2 text-blue-500" />
+              Boarding starts 30 minutes before departure
             </div>
             <div className="flex items-center text-gray-600">
-              <svg className="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Arrive 30 minutes early
+              <X className="w-5 h-5 mr-2 text-red-500" />
+              No refunds for no-shows
             </div>
           </div>
         </div>
@@ -223,4 +345,4 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   );
 };
 
-export default TicketDetails;
+export default TicketDashboard;

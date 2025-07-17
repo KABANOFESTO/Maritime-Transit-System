@@ -8,6 +8,7 @@ import {
     HeadphonesIcon,
     MapPin,
     LogOut,
+    Settings,
     Menu,
     X
 } from "lucide-react";
@@ -46,6 +47,11 @@ const items = [
         url: "/staff/fleet-status",
         icon: MapPin,
     },
+    {
+        title: "Profile & settings",
+        url: "/staff/settings",
+        icon: Settings,
+    },
 ];
 
 export default function Sidebar() {
@@ -59,14 +65,10 @@ export default function Sidebar() {
     };
 
     const performLogout = () => {
-        // Clear all localStorage data
         localStorage.clear();
-        
-        // Redirect to auth page
         router.push('/auth');
     };
 
-    // Confirm Dialog Component
     type ConfirmDialogProps = {
         open: boolean;
         setOpen: (open: boolean) => void;
@@ -126,7 +128,7 @@ export default function Sidebar() {
                 border-r border-gray-200
             `}>
                 <div className="flex flex-col h-full">
-                    {/* Header */}
+
                     <div className="p-6 border-b border-gray-200">
                         <h2 className="text-lg font-semibold text-gray-800">
                             Welcome, To Operation Staff
@@ -140,11 +142,10 @@ export default function Sidebar() {
                                 <li key={item.title}>
                                     <Link
                                         href={item.url}
-                                        className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                                            pathname === item.url
-                                                ? 'bg-blue-400 text-white'
-                                                : 'text-gray-600 hover:bg-gray-200'
-                                        }`}
+                                        className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${pathname === item.url
+                                            ? 'bg-blue-400 text-white'
+                                            : 'text-gray-600 hover:bg-gray-200'
+                                            }`}
                                         onClick={() => setIsMobileOpen(false)}
                                     >
                                         <item.icon size={18} />
