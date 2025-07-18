@@ -18,7 +18,7 @@ interface Complaint {
   user: User;
   subject: string;
   message: string;
-  status: 'Pending' | 'In Progress' | 'Resolved' | 'Closed';
+  status: 'Pending' | 'In_Progress' | 'Resolved' | 'REJECTED';
   submittedAt: string;
   conversations?: Conversation[];
 }
@@ -43,7 +43,6 @@ const SupportTickets = () => {
 
   useEffect(() => {
     if (complaints) {
-
       const initialStatus: { [key: number]: string } = {};
       complaints.forEach((complaint: Complaint) => {
         initialStatus[complaint.id] = complaint.status;
@@ -61,18 +60,41 @@ const SupportTickets = () => {
 
   const handleReply = async (complaintId: number) => {
     const replyText = replyTexts[complaintId];
-    if (replyText?.trim()) {
+    const complaint = complaints?.find((c: Complaint) => c.id === complaintId);
+    
+    if (replyText?.trim() && complaint) {
       try {
-        // In a real app, you would send this to your API
-        console.log(`Replying to complaint ${complaintId}:`, replyText);
+        // Create email reply
+        const emailSubject = `Re: ${complaint.subject} - Complaint ID: ${complaint.id}`;
+        const emailBody = `Dear ${complaint.user.username},
+
+Thank you for contacting our support team. We have received your complaint regarding "${complaint.subject}".
+
+${replyText}
+
+Best regards,
+Support Team
+
+---
+Original message:
+${complaint.message}
+
+Complaint ID: ${complaint.id}
+Submitted: ${new Date(complaint.submittedAt).toLocaleDateString()}`;
+
+        // Open email client with pre-filled content
+        const mailtoLink = `mailto:${complaint.user.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        window.open(mailtoLink);
 
         // Clear the reply text
         setReplyTexts(prev => ({
           ...prev,
           [complaintId]: ''
         }));
+
+        console.log(`Email reply prepared for complaint ${complaintId} to ${complaint.user.email}`);
       } catch (error) {
-        console.error('Error sending reply:', error);
+        console.error('Error preparing email reply:', error);
       }
     }
   };
@@ -109,9 +131,9 @@ const SupportTickets = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Pending': return 'bg-red-100 text-red-800';
-      case 'In Progress': return 'bg-yellow-100 text-yellow-800';
+      case 'In_Progress': return 'bg-yellow-100 text-yellow-800';
       case 'Resolved': return 'bg-green-100 text-green-800';
-      case 'Closed': return 'bg-gray-100 text-gray-800';
+      case 'REJECTED': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -236,7 +258,7 @@ const SupportTickets = () => {
                           onClick={() => handleReply(complaint.id)}
                           className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                         >
-                          Reply
+                          Reply via Email
                         </button>
                       </div>
                     </div>
@@ -273,9 +295,9 @@ const SupportTickets = () => {
                     className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm font-medium"
                   >
                     <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
+                    <option value="In_Progress">In Progress</option>
                     <option value="Resolved">Resolved</option>
-                    <option value="Closed">Closed</option>
+                    <option value="REJECTED">Closed</option>
                   </select>
 
                   <button
@@ -309,7 +331,7 @@ const SupportTickets = () => {
               <div>
                 <p className="text-sm text-gray-600">In Progress</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {complaints.filter((c: Complaint) => c.status === 'In Progress').length}
+                  {complaints.filter((c: Complaint) => c.status === 'In_Progress').length}
                 </p>
               </div>
             </div>

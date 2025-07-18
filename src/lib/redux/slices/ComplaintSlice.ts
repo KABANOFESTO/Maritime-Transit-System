@@ -31,9 +31,9 @@ const complaintApi = apiSlice.injectEndpoints({
         }),
         updateComplaint: builder.mutation({
             query: (updatedComplaint) => ({
-                url: `/complaints/${updatedComplaint.id}`,
-                method: "PUT",
-                body: updatedComplaint,
+                url: `/complaints/${updatedComplaint.id}/status?status=${encodeURIComponent(updatedComplaint.status)}`,
+                method: "PATCH",
+                body: { status: updatedComplaint.status }, 
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${localStorage.getItem("token")}`,

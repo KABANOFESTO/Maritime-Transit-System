@@ -34,7 +34,6 @@ export const authOptions = {
           });
 
           if (!response.data) {
-            console.log("❌ No response data");
             throw new Error("No response data from API");
           }
 
@@ -67,9 +66,8 @@ export const authOptions = {
                 role: tokenPayload.role || 'USER',
                 username: tokenPayload.username || credentials.email.split('@')[0]
               };
-              console.log("✅ Extracted user from JWT:", user);
             } catch (jwtError) {
-              console.log("⚠️ Could not parse JWT, using basic user info");
+
               user = {
                 id: credentials.email,
                 email: credentials.email,
@@ -78,11 +76,9 @@ export const authOptions = {
               };
             }
           } else if (response.data.id && response.data.email) {
-            // Direct user object
             user = response.data;
             token = response.data.token || "dummy-token";
             refresh = response.data.refreshToken || null;
-            console.log("✅ Using direct user object structure");
           } else {
             throw new Error("Invalid response structure from API");
           }
@@ -100,7 +96,6 @@ export const authOptions = {
             refreshToken: refresh,
           };
 
-          console.log("✅ Returning user object:", JSON.stringify(userObject, null, 2));
           return userObject;
 
         } catch (error) {
@@ -112,19 +107,16 @@ export const authOptions = {
             }
             
             if (error.response?.status === 401) {
-              console.error("🚫 Invalid credentials from API");
               throw new Error("Invalid email or password");
             }
             
             if (error.response?.status >= 500) {
-              console.error("🔥 Server error from API");
               throw new Error("Authentication server error");
             }
 
             throw new Error(`API Error: ${error.response?.status} ${error.response?.statusText}`);
           }
           
-          console.error("🔥 Non-Axios error:", error.message);
           throw new Error(error.message || "Authentication failed");
         }
       },
@@ -132,11 +124,7 @@ export const authOptions = {
   ],
   callbacks: {
     async jwt({ token, user, account }) {
-      console.log("🔑 JWT CALLBACK TRIGGERED");
-      console.log("  - Has token:", !!token);
-      console.log("  - Has user:", !!user);
-      console.log("  - Has account:", !!account);
-      
+    
       if (user) {
         console.log("📝 Adding user data to JWT token");
         token.id = user.id;
@@ -145,14 +133,10 @@ export const authOptions = {
         token.role = user.role;
         token.accessToken = user.token;
         token.refreshToken = user.refreshToken;
-        console.log("✅ JWT token updated");
       }
       return token;
     },
     async session({ session, token }) {
-      console.log("👤 SESSION CALLBACK TRIGGERED");
-      console.log("  - Has session:", !!session);
-      console.log("  - Has token:", !!token);
       
       if (token) {
         session.user = {
@@ -163,7 +147,6 @@ export const authOptions = {
           token: token.accessToken,
           refreshToken: token.refreshToken,
         };
-        console.log("✅ Session user created:", session.user.email);
       }
       
       return session;
@@ -174,18 +157,13 @@ export const authOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24 hours
+    maxAge: 24 * 60 * 60, 
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: true, // Force enable debug
+  debug: true, 
 };
 
-// For Pages Router (pages/api/auth/[...nextauth].js)
 export default function auth(req, res) {
-  console.log("🚀 NextAuth handler called");
-  console.log("  - Method:", req.method);
-  console.log("  - URL:", req.url);
-  console.log("  - Headers:", JSON.stringify(req.headers, null, 2));
-  
+
   return NextAuth(req, res, authOptions);
 }

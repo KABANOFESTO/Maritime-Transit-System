@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 
 const items = [
     {
@@ -129,10 +130,13 @@ export default function Sidebar() {
             `}>
                 <div className="flex flex-col h-full">
 
-                    <div className="p-6 border-b border-gray-200">
-                        <h2 className="text-lg font-semibold text-gray-800">
-                            Welcome, To Operation Staff
-                        </h2>
+                    <div className="justify-center items-center flex">
+                        <Image
+                            src="/images/logo.png"
+                            alt="Logo"
+                            width={120}
+                            height={40}
+                        />
                     </div>
 
                     {/* Navigation Items */}

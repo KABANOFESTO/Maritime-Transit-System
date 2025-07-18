@@ -20,9 +20,25 @@ const authApi = apiSlice.injectEndpoints({
 
     updateProfile: builder.mutation({
       query: (data) => ({
-        url: "users/update-profile",
-        method: "PUT",
+        url: `users/update/${data.email}`,
+        method: "PUT", 
         body: data,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
+      }),
+    }),
+
+    changePassword: builder.mutation({
+      query: (data) => ({
+        url: `users/change-password/${data.email}`,
+        method: "PUT", 
+        body: data,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
       }),
     }),
 
@@ -36,8 +52,11 @@ const authApi = apiSlice.injectEndpoints({
 
     getAllUsers: builder.query({
       query: () => ({
-        url: "users",
+        url: "users/all", // Added "/all" to match your controller endpoint
         method: "GET",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
       }),
     }),
 
@@ -45,6 +64,9 @@ const authApi = apiSlice.injectEndpoints({
       query: (email) => ({
         url: `users/${encodeURIComponent(email)}`,
         method: "GET",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
       }),
     }),
 
@@ -69,6 +91,7 @@ export const {
   useRegisterMutation,
   useUpdateProfileMutation,
   useForgotPasswordMutation,
+  useChangePasswordMutation,
   useGetAllUsersQuery,
   useGetUserByEmailQuery,
   useGetCurrentUserQuery,
