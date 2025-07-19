@@ -129,6 +129,105 @@ public class UserController {
         }
     }
 
+    
+    @PutMapping("/update/{email}")
+    public ResponseEntity<String> updateUser(
+            @PathVariable("email") String email,
+            @RequestBody User updatedUser,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authorization token is required");
+            }
+
+            String token = authHeader.substring(7);
+            Claims claims = jwtUtil.extractClaims(token);
+            String requesterEmail = claims.getSubject();
+            String role = claims.get("role", String.class);
+
+            // Only ADMIN or owner of the account can update
+            if (!email.equals(requesterEmail) && !Role.ADMIN.name().equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Access denied: You can only update your own profile");
+            }
+
+            // Get existing user
+            User existingUser = userService.getUser(email);
+
+            // Update allowed fields (preserve email and password)
+            if (updatedUser.getUsername() != null) {
+                existingUser.setUsername(updatedUser.getUsername());
+            }
+
+            // Only ADMIN can change user roles
+            if (Role.ADMIN.name().equals(role) && updatedUser.getRole() != null) {
+                existingUser.setRole(updatedUser.getRole());
+            }
+
+            userService.updateUser(existingUser);
+            return ResponseEntity.ok("User updated successfully");
+
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found: " + e.getMessage());
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating user: " + e.getMessage());
+        }
+    }
+
+    /** Change user password - Users can change their own password */
+    @PutMapping("/change-password/{email}")
+    public ResponseEntity<String> changePassword(
+            @PathVariable("email") String email,
+            @RequestBody Map<String, String> passwordData,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authorization token is required");
+            }
+
+            String token = authHeader.substring(7);
+            Claims claims = jwtUtil.extractClaims(token);
+            String requesterEmail = claims.getSubject();
+            String role = claims.get("role", String.class);
+
+            // Only ADMIN or owner of the account can change password
+            if (!email.equals(requesterEmail) && !Role.ADMIN.name().equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Access denied: You can only change your own password");
+            }
+
+            String currentPassword = passwordData.get("currentPassword");
+            String newPassword = passwordData.get("newPassword");
+
+            if (currentPassword == null || newPassword == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Both currentPassword and newPassword are required");
+            }
+
+            // For non-admin users, verify current password
+            if (!Role.ADMIN.name().equals(role)) {
+                boolean isCurrentPasswordValid = userService.authenticateUser(email, currentPassword);
+                if (!isCurrentPasswordValid) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Current password is incorrect");
+                }
+            }
+
+            userService.changePassword(email, newPassword);
+            return ResponseEntity.ok("Password changed successfully");
+
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found: " + e.getMessage());
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error changing password: " + e.getMessage());
+        }
+    }
+
     /** Only ADMIN can delete any user, except their own account */
     @DeleteMapping("/delete/{email}")
     public ResponseEntity<String> deleteUser(

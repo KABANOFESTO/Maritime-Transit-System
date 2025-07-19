@@ -1,5 +1,6 @@
 package rw.maritime.nvg.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,7 +10,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@ToString(exclude = "payment")
 public class TicketPayment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,6 +18,7 @@ public class TicketPayment {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "payment_id")
+    @JsonBackReference("payment-ticketPayments")
     private Payment payment;
 
     @ManyToOne(optional = false)

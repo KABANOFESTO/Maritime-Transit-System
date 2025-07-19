@@ -13,7 +13,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"vessel", "route", "tickets", "cargo"}) 
+@ToString(exclude = { "vessel", "route", "tickets", "cargo" })
 public class Schedule {
 
     @Id
@@ -22,12 +22,12 @@ public class Schedule {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "vessel_id")
-    @JsonIgnoreProperties({"schedules", "hibernateLazyInitializer", "handler"}) 
+    @JsonIgnoreProperties({ "schedules", "hibernateLazyInitializer", "handler" })
     private Vessel vessel;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "route_id")
-    @JsonIgnoreProperties({"schedules", "hibernateLazyInitializer", "handler"}) 
+    @JsonIgnoreProperties({ "schedules", "hibernateLazyInitializer", "handler" })
     private Route route;
 
     @Column(nullable = false)
@@ -43,17 +43,17 @@ public class Schedule {
     private double totalCargoCapacity;
 
     @Column(name = "seat_price", nullable = false)
-    private double seatPrice;  
+    private double seatPrice;
 
     @Column(name = "cargo_price_per_kg", nullable = false)
     private double cargoPricePerKg;
 
     @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnoreProperties({"schedule", "hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({ "schedule", "hibernateLazyInitializer", "handler" })
     private List<Ticket> tickets;
 
     @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnoreProperties({"schedule", "hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({ "schedule", "hibernateLazyInitializer", "handler" })
     private List<Cargo> cargo;
 
     public int getBookedSeatsCount() {

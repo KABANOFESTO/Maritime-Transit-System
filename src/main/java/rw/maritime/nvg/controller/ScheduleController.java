@@ -75,17 +75,17 @@ public class ScheduleController {
     public ResponseEntity<Schedule> createSchedule(
             @Valid @RequestBody ScheduleRequest request,
             BindingResult bindingResult) { // BindingResult must be immediately after @Valid parameter
-        
+
         // Check for validation errors first
         if (bindingResult.hasErrors()) {
             throw new ValidationException(bindingResult.getFieldErrors());
         }
-        
+
         // Check business logic validation
         if (request.getArrivalTime().isBefore(request.getDepartureTime())) {
             throw new ValidationException("Arrival time must be after departure time");
         }
-        
+
         try {
             Schedule createdSchedule = scheduleService.createSchedule(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdSchedule);
@@ -102,15 +102,15 @@ public class ScheduleController {
             @PathVariable Long id,
             @Valid @RequestBody ScheduleRequest request,
             BindingResult bindingResult) { // BindingResult must be immediately after @Valid parameter
-        
+
         if (bindingResult.hasErrors()) {
             throw new ValidationException(bindingResult.getFieldErrors());
         }
-        
+
         if (request.getArrivalTime().isBefore(request.getDepartureTime())) {
             throw new ValidationException("Arrival time must be after departure time");
         }
-        
+
         return ResponseEntity.ok(scheduleService.updateSchedule(id, request));
     }
 

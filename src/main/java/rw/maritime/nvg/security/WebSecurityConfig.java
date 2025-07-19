@@ -102,12 +102,15 @@ public class WebSecurityConfig {
                 "exp://192.168.1.117:8081",
                 "http://127.0.0.1:5500"));
         configuration.setAllowCredentials(true);
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
                 "X-Requested-With",
-                "Accept"));
+                "Accept",
+                "Origin",
+                "Cache-Control",
+                "X-File-Name"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
         configuration.setMaxAge(3600L);
 

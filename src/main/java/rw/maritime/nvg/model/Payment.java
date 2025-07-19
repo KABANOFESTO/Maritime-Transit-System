@@ -1,5 +1,6 @@
 package rw.maritime.nvg.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,7 +14,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@ToString(exclude = { "ticketPayments", "cargoPayments" }) // Exclude collections from toString
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,12 +43,13 @@ public class Payment {
     private String stripePaymentIntentId;
 
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("payment-ticketPayments") 
     private List<TicketPayment> ticketPayments = new ArrayList<>();
 
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("payment-cargoPayments") 
     private List<CargoPayment> cargoPayments = new ArrayList<>();
 
-    // Helper methods
     public void addTicketPayment(TicketPayment ticketPayment) {
         ticketPayments.add(ticketPayment);
         ticketPayment.setPayment(this);

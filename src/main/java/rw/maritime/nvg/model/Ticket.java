@@ -1,5 +1,6 @@
 package rw.maritime.nvg.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,5 +27,6 @@ public class Ticket {
     private boolean paid;
 
     @OneToOne(mappedBy = "ticket", cascade = CascadeType.ALL)
+    @JsonIgnore 
     private TicketPayment ticketPayment;
 }

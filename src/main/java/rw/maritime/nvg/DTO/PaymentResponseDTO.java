@@ -17,7 +17,7 @@ public class PaymentResponseDTO {
     private String paymentStatus;
     private String paymentMethod;
     private LocalDateTime paymentDate;
-    private String clientSecret; 
+    private String clientSecret;
     private List<Long> ticketIds;
     private List<Long> cargoIds;
 }

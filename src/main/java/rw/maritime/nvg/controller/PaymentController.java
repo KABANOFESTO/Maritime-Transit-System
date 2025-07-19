@@ -1,30 +1,32 @@
-// package rw.maritime.nvg.controller;
+package rw.maritime.nvg.controller;
 
-// import org.springframework.http.ResponseEntity;
-// import org.springframework.web.bind.annotation.*;
-// import rw.maritime.nvg.DTO.PaymentRequestDTO;
-// import rw.maritime.nvg.DTO.PaymentResponseDTO;
-// import rw.maritime.nvg.service.PaymentService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-// @RestController
-// @RequestMapping("/api/v1/payments")
-// public class PaymentController {
+import rw.maritime.nvg.DTO.PaymentRequestDTO;
+import rw.maritime.nvg.DTO.PaymentResponseDTO;
+import rw.maritime.nvg.service.PaymentService;
 
-//     private final PaymentService paymentService;
+@RestController
+@RequestMapping("/api/v1/payments")
+public class PaymentController {
 
-//     public PaymentController(PaymentService paymentService) {
-//         this.paymentService = paymentService;
-//     }
+    private final PaymentService paymentService;
 
-//     @PostMapping
-//     public ResponseEntity<PaymentResponseDTO> createPayment(@RequestBody PaymentRequestDTO paymentRequest) {
-//         PaymentResponseDTO response = paymentService.createPaymentIntent(paymentRequest);
-//         return ResponseEntity.ok(response);
-//     }
+    public PaymentController(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
 
-//     @PostMapping("/confirm")
-//     public ResponseEntity<PaymentResponseDTO> confirmPayment(@RequestParam String paymentIntentId) {
-//         PaymentResponseDTO response = paymentService.confirmPayment(paymentIntentId);
-//         return ResponseEntity.ok(response);
-//     }
-// }
+    @PostMapping
+    public ResponseEntity<PaymentResponseDTO> createPayment(@RequestBody PaymentRequestDTO paymentRequest) {
+        PaymentResponseDTO response = paymentService.createPaymentIntent(paymentRequest);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/confirm")
+    public ResponseEntity<PaymentResponseDTO> confirmPayment(@RequestParam String paymentIntentId) {
+        PaymentResponseDTO response = paymentService.confirmPayment(paymentIntentId);
+        return ResponseEntity.ok(response);
+    }
+
+}

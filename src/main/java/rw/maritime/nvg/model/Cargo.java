@@ -1,5 +1,6 @@
 package rw.maritime.nvg.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -41,5 +42,6 @@ public class Cargo {
     private double price;
 
     @OneToOne(mappedBy = "cargo", cascade = CascadeType.ALL)
+    @JsonIgnore
     private CargoPayment cargoPayment;
 }

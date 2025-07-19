@@ -1,6 +1,5 @@
 package rw.maritime.nvg.service;
 
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import rw.maritime.nvg.model.User;
@@ -52,5 +51,25 @@ public class UserService implements IUserService {
         User user = getUser(email);
         userRepository.delete(user);
     }
-}
 
+    @Override
+    public User updateUser(User user) throws Exception {
+        User existingUser = userRepository.findByEmail(user.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Update fields while preserving password
+        existingUser.setUsername(user.getUsername());
+        existingUser.setRole(user.getRole());
+
+        return userRepository.save(existingUser);
+    }
+
+    @Override
+    public void changePassword(String email, String newPassword) throws Exception {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+}
