@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Home, Lock, Eye, EyeOff } from 'lucide-react';
+import { useResetPasswordMutation } from '@/lib/redux/slices/AuthSlice';
 
 export default function ResetPassword() {
     const [password, setPassword] = useState('');
@@ -13,9 +14,12 @@ export default function ResetPassword() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [focusedField, setFocusedField] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
+
+    const [resetPassword, { isLoading, error }] = useResetPasswordMutation();
+
+    const token = searchParams?.get('token') || '';
 
     const handleFocus = (fieldName: string) => {
         setFocusedField(fieldName);
@@ -27,7 +31,6 @@ export default function ResetPassword() {
 
     const handleSubmit = async (e: React.FormEvent): Promise<void> => {
         e.preventDefault();
-        setIsLoading(true);
 
         // Validation
         if (!password || !confirmPassword) {
@@ -38,7 +41,6 @@ export default function ResetPassword() {
                     border: '1px solid #fca5a5',
                 },
             });
-            setIsLoading(false);
             return;
         }
 
@@ -50,7 +52,6 @@ export default function ResetPassword() {
                     border: '1px solid #fca5a5',
                 },
             });
-            setIsLoading(false);
             return;
         }
 
@@ -62,13 +63,27 @@ export default function ResetPassword() {
                     border: '1px solid #fca5a5',
                 },
             });
-            setIsLoading(false);
+            return;
+        }
+
+        if (!token) {
+            toast.error('Invalid or missing reset token. Please request a new password reset link.', {
+                style: {
+                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                    color: 'white',
+                    border: '1px solid #fca5a5',
+                },
+            });
             return;
         }
 
         try {
-          
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Call the reset password mutation
+            const result = await resetPassword({
+                token,
+                password,
+                confirmPassword
+            }).unwrap();
 
             // Show success message
             toast.success('Password reset successfully! Redirecting to login...', {
@@ -87,17 +102,19 @@ export default function ResetPassword() {
             setTimeout(() => {
                 router.push('/auth');
             }, 2000);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Password reset error:', error);
-            toast.error('Failed to reset password. Please try again.', {
+
+            // Handle different types of errors
+            const errorMessage = error?.data?.message || error?.message || 'Failed to reset password. Please try again.';
+
+            toast.error(errorMessage, {
                 style: {
                     background: 'linear-gradient(135deg, #ef4444, #dc2626)',
                     color: 'white',
                     border: '1px solid #fca5a5',
                 },
             });
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -149,8 +166,8 @@ export default function ResetPassword() {
                                             onBlur={handleBlur}
                                             placeholder="••••••••••"
                                             className={`w-full px-4 py-3 pr-10 border rounded-lg transition-all duration-300 transform focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:scale-105 hover:shadow-lg ${focusedField === 'password'
-                                                    ? 'border-blue-500 shadow-xl bg-white'
-                                                    : 'border-gray-300 bg-white hover:border-gray-400'
+                                                ? 'border-blue-500 shadow-xl bg-white'
+                                                : 'border-gray-300 bg-white hover:border-gray-400'
                                                 }`}
                                             disabled={isLoading}
                                         />
@@ -160,6 +177,7 @@ export default function ResetPassword() {
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
                                             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-500"
+                                            disabled={isLoading}
                                         >
                                             {showPassword ? (
                                                 <EyeOff className="w-5 h-5" />
@@ -188,8 +206,8 @@ export default function ResetPassword() {
                                             onBlur={handleBlur}
                                             placeholder="••••••••••"
                                             className={`w-full px-4 py-3 pr-10 border rounded-lg transition-all duration-300 transform focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:scale-105 hover:shadow-lg ${focusedField === 'confirmPassword'
-                                                    ? 'border-blue-500 shadow-xl bg-white'
-                                                    : 'border-gray-300 bg-white hover:border-gray-400'
+                                                ? 'border-blue-500 shadow-xl bg-white'
+                                                : 'border-gray-300 bg-white hover:border-gray-400'
                                                 }`}
                                             disabled={isLoading}
                                         />
@@ -199,6 +217,7 @@ export default function ResetPassword() {
                                             type="button"
                                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-500"
+                                            disabled={isLoading}
                                         >
                                             {showConfirmPassword ? (
                                                 <EyeOff className="w-5 h-5" />

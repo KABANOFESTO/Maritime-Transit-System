@@ -20,17 +20,15 @@ const Navbar = ({ onSearch }: NavbarProps) => {
     const [showUserDropdown, setShowUserDropdown] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Get user email from session
     const userEmail = session?.user?.email;
 
-    // Fetch user details only if we have session and email
     const { 
         data: userDetails, 
         isLoading, 
         isError, 
         error 
     } = useGetUserByEmailQuery(userEmail!, {
-        skip: !session || !userEmail, // Skip if no session or email
+        skip: !session || !userEmail, 
     });
 
     // Debounce search input
