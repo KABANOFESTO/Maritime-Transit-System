@@ -24,7 +24,9 @@ export default function SignUp() {
   });
 
   const [focusedField, setFocusedField] = useState<string>('');
-  const [registerUser, { isLoading, error, isSuccess }] = useRegisterMutation();
+  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [registerUser, { isLoading }] = useRegisterMutation();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value, type, checked } = e.target;
@@ -45,13 +47,17 @@ export default function SignUp() {
   const handleSignUp = async (e: React.MouseEvent<HTMLButtonElement>): Promise<void> => {
     e.preventDefault();
 
+    // Clear previous messages
+    setSuccessMessage('');
+    setErrorMessage('');
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
+      setErrorMessage("Passwords don't match!");
       return;
     }
 
     if (!formData.username || !formData.email || !formData.password) {
-      alert("Please fill in all required fields!");
+      setErrorMessage("Please fill in all required fields!");
       return;
     }
 
@@ -60,10 +66,12 @@ export default function SignUp() {
         username: formData.username,
         email: formData.email,
         password: formData.password,
+        role: 'STAFF' // Set role to STAFF for all new users
       }).unwrap();
 
-      alert('🎉 Welcome! Your account has been created successfully. You can now sign in and start your journey with us!');
+      setSuccessMessage('🎉 Welcome! Your account has been created successfully. You can now sign in and start your journey with us!');
 
+      // Reset form
       setFormData({
         username: '',
         email: '',
@@ -75,38 +83,39 @@ export default function SignUp() {
     } catch (err: any) {
       console.error('Registration failed:', err);
 
-      let errorMessage = 'Registration failed. Please try again.';
+      let errorMsg = 'Registration failed. Please try again.';
 
       if (err?.status === 'PARSING_ERROR') {
         console.warn('Parsing error occurred, but registration may have succeeded');
-        errorMessage = 'Good news! Your account might have been created successfully. We had trouble confirming this, so please try signing in with your new credentials.';
+        setSuccessMessage('Good news! Your account might have been created successfully. We had trouble confirming this, so please try signing in with your new credentials.');
+        return;
       } else if (err?.data?.message) {
-        errorMessage = err.data.message;
+        errorMsg = err.data.message;
       } else if (err?.message) {
-        errorMessage = err.message;
+        errorMsg = err.message;
       } else if (err?.status) {
         switch (err.status) {
           case 400:
-            errorMessage = 'Oops! Please check your information and make sure all fields are filled correctly.';
+            errorMsg = 'Oops! Please check your information and make sure all fields are filled correctly.';
             break;
           case 409:
-            errorMessage = 'This username or email is already taken. Please try a different one.';
+            errorMsg = 'This username or email is already taken. Please try a different one.';
             break;
           case 422:
-            errorMessage = 'Please check your input - make sure your email is valid and password meets requirements.';
+            errorMsg = 'Please check your input - make sure your email is valid and password meets requirements.';
             break;
           case 500:
-            errorMessage = 'Our servers are having trouble right now. Please try again in a few moments.';
+            errorMsg = 'Our servers are having trouble right now. Please try again in a few moments.';
             break;
           case 503:
-            errorMessage = 'Service temporarily unavailable. Please try again later.';
+            errorMsg = 'Service temporarily unavailable. Please try again later.';
             break;
           default:
-            errorMessage = 'Something unexpected happened. Please try again or contact support if the problem persists.';
+            errorMsg = 'Something unexpected happened. Please try again or contact support if the problem persists.';
         }
       }
 
-      alert(errorMessage);
+      setErrorMessage(errorMsg);
     }
   };
 
@@ -142,35 +151,22 @@ export default function SignUp() {
               </div>
 
               {/* Error Message */}
-              {error && (
+              {errorMessage && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start space-x-3 animate-slideInDown shadow-lg">
                   <div className="flex-shrink-0">
-                    {(error as any)?.status === 'PARSING_ERROR' ? (
-                      <svg className="w-5 h-5 text-yellow-500 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5 text-red-500 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
-                    )}
+                    <svg className="w-5 h-5 text-red-500 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-sm font-medium">
-                      {(error as any)?.status === 'PARSING_ERROR' ? 'Registration Status Unclear' : 'Registration Failed'}
-                    </h3>
-                    <p className="mt-1 text-sm">
-                      {(error as any)?.status === 'PARSING_ERROR'
-                        ? 'Your account might have been created successfully! We had trouble confirming this. Please try signing in with your credentials.'
-                        : (error as any)?.data?.message || (error as any)?.message || 'Something went wrong during registration. Please check your information and try again.'
-                      }
-                    </p>
+                    <h3 className="text-sm font-medium">Registration Failed</h3>
+                    <p className="mt-1 text-sm">{errorMessage}</p>
                   </div>
                 </div>
               )}
 
               {/* Success Message */}
-              {isSuccess && (
+              {successMessage && (
                 <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center space-x-3 animate-slideInDown shadow-lg">
                   <div className="flex-shrink-0">
                     <svg className="w-5 h-5 text-green-500 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
@@ -179,7 +175,7 @@ export default function SignUp() {
                   </div>
                   <div>
                     <h3 className="text-sm font-medium">Welcome aboard! 🎉</h3>
-                    <p className="mt-1 text-sm">Your account has been created successfully. You can now sign in and start exploring!</p>
+                    <p className="mt-1 text-sm">{successMessage}</p>
                   </div>
                 </div>
               )}
